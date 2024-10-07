@@ -17,8 +17,8 @@
 using namespace std::chrono;
 
 // this is the number of falling physical items. 
-#define NUMBER_OF_BOXES 50
-#define NUMBER_OF_SPHERES 50
+#define NUMBER_OF_BOXES 500
+#define NUMBER_OF_SPHERES 500
 
 // these is where the camera is, where it is looking and the bounds of the continaing box. You shouldn't need to alter these
 
@@ -251,6 +251,7 @@ void mouse(int button, int state, int x, int y) {
         bool clickedBoxOK = false;
         float minIntersectionDistance = std::numeric_limits<float>::max();
 
+        ColliderObject* intersectedBox = nullptr;
         for (ColliderObject* box : colliders) {
             if (rayBoxIntersection(cameraPosition, rayDirection, box)) {
                 // Calculate the distance between the camera and the intersected box
@@ -261,6 +262,7 @@ void mouse(int button, int state, int x, int y) {
                 if (distance < minIntersectionDistance) {
                     clickedBoxOK = true;
                     minIntersectionDistance = distance;
+                    intersectedBox = box;
                 }
             }
         }
@@ -268,7 +270,7 @@ void mouse(int button, int state, int x, int y) {
         // Remove the clicked box if any
         if (clickedBoxOK != false) {
             // TODO
-            //colliders.erase(colliders.begin() + clickedBoxIndex);
+            colliders.remove(intersectedBox);
         }
     }
 }
