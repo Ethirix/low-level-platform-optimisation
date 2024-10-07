@@ -148,6 +148,9 @@ void updatePhysics(const float deltaTime) {
     //  and add the pointer to that region's list.
     // Then, run two threads with the code below (changing 'colliders' to be the region's list)
 
+    //world is 40xYx60
+    //octree use the biggest dimension - determine where to stop the either Z or Y from the octree, or just set it to massive.
+
     for (ColliderObject* box : colliders) { 
         
         box->update(&colliders, deltaTime);

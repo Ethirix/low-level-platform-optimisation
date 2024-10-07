@@ -175,6 +175,7 @@
     <ClCompile Include="Box.cpp" />
     <ClCompile Include="ColliderObject.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Octree.cpp" />
     <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Vec3.cpp" />
   </ItemGroup>
@@ -183,6 +184,7 @@
     <ClInclude Include="Callbacks.h" />
     <ClInclude Include="ColliderObject.h" />
     <ClInclude Include="globals.h" />
+    <ClInclude Include="Octree.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Vec3.h" />
   </ItemGroup>
