@@ -5,6 +5,6 @@ class Sphere :
 {
 public:
 
-    void drawMesh() { glutSolidSphere(0.5, 5, 5); }
+    void drawMesh() override { glutSolidSphere(0.5, 5, 5); }
 }; 
 

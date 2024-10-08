@@ -11,6 +11,7 @@
 #include "Vec3.h"
 #include "ColliderObject.h"
 #include "Box.h"
+#include "MemoryTracker.h"
 #include "Sphere.h"
 
 
@@ -19,6 +20,9 @@ using namespace std::chrono;
 // this is the number of falling physical items. 
 #define NUMBER_OF_BOXES 500
 #define NUMBER_OF_SPHERES 500
+
+#define RESOLUTION_X 1920
+#define RESOLUTION_Y 1080
 
 // these is where the camera is, where it is looking and the bounds of the continaing box. You shouldn't need to alter these
 
@@ -29,10 +33,6 @@ using namespace std::chrono;
 #define LOOKDIR_X 10
 #define LOOKDIR_Y 0
 #define LOOKDIR_Z 0
-
-
-
-
 
 std::list<ColliderObject*> colliders;
 
@@ -141,7 +141,7 @@ Vec3 screenToWorld(int x, int y) {
 // update the physics: gravity, collision test, collision resolution
 void updatePhysics(const float deltaTime) {
     
-    // todo for the assessment - use a thread for each sub region
+    // todo for the assessment - use a thread for each sub-region
     // for example, assuming we have two regions:
     // from 'colliders' create two separate lists
     // empty each list (from previous frame) and work out which collidable object is in which region, 
@@ -227,6 +227,9 @@ void idle() {
     const duration<float> frameTime = last - old;
     float deltaTime = frameTime.count();
 
+    if (deltaTime > 1)
+        return;
+
     updatePhysics(deltaTime);
 
     // tell glut to draw - note this will cap this function at 60 fps
@@ -270,7 +273,7 @@ void mouse(int button, int state, int x, int y) {
         // Remove the clicked box if any
         if (clickedBoxOK != false) {
             // TODO
-            colliders.remove(intersectedBox);
+        	colliders.remove(intersectedBox);
         }
     }
 }
@@ -286,17 +289,16 @@ void keyboard(unsigned char key, int x, int y) {
     }
     else if (key == '1') { // 1
 
-        std::cout << "Memory used" << std::endl;
+        std::cout << "Memory used: " << MemoryTracker::Get().GetTotalAllocation() << '\n';
     }
 }
 
 // the main function. 
 int main(int argc, char** argv) {
-
-    srand(static_cast<unsigned>(time(0))); // Seed random number generator
+    srand(static_cast<unsigned>(time(nullptr))); // Seed random number generator
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutInitWindowSize(1920, 1080);
+    glutInitWindowSize(RESOLUTION_X, RESOLUTION_Y);
     glutCreateWindow("Simple Physics Simulation");
 
     glutKeyboardFunc(keyboard);
@@ -307,7 +309,7 @@ int main(int argc, char** argv) {
     glEnable(GL_LIGHT0);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45.0, 800.0 / 600.0, 0.1, 100.0);
+    gluPerspective(45.0, static_cast<double>(RESOLUTION_X) / RESOLUTION_Y, 0.1, 100.0);
     glMatrixMode(GL_MODELVIEW);
 
     initScene(NUMBER_OF_BOXES, NUMBER_OF_SPHERES);
