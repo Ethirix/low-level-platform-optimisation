@@ -8,13 +8,13 @@ class Box : public ColliderObject
 public:
 	void* operator new(size_t size)
 	{
-		MemoryTracker::Get().AddAllocation<Box>();
+		MemoryTracker::Get().AddAllocationOfType<Box>();
 		return ::operator new(size);
 	}
 
 	void operator delete(void* pMemory)
 	{
-		MemoryTracker::Get().RemoveAllocation<Box>();
+		MemoryTracker::Get().RemoveAllocationOfType<Box>();
 		::operator delete(pMemory);
 	}
 

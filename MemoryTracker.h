@@ -17,47 +17,36 @@ public:
 	MemoryTracker& operator=(MemoryTracker&&) = delete;
 
 	template <typename T>
-	void AddAllocation()
+	void AddAllocationOfType()
 	{
 		_allocatedMap[typeid(T).hash_code()] += sizeof(T);
 	}
 
 	void AddAllocation(size_t size)
 	{
-		_genericAllocations += size;
+		_totalAllocation += size;
 	}
 
 	template <typename T>
-	void RemoveAllocation()
+	void RemoveAllocationOfType()
 	{
 		_allocatedMap[typeid(T).hash_code()] -= sizeof(T);
 	}
 
 	void RemoveAllocation(size_t size)
 	{
-		_genericAllocations -= size;
+		_totalAllocation -= size;
 	}
 
 	template <typename T>
-	unsigned GetCurrentAllocation()
+	unsigned GetCurrentAllocationOfType()
 	{
 		return _allocatedMap[typeid(T).hash_code()];
 	}
 
-	unsigned GetCurrentAllocation() const
-	{
-		return _genericAllocations;
-	}
-
 	unsigned GetTotalAllocation() const
 	{
-		unsigned total = 0;
-		for (const std::pair<const unsigned, unsigned> element : _allocatedMap)
-		{
-			total += element.second;
-		}
-
-		return total + _genericAllocations;
+		return _totalAllocation;
 	}
 
 private:
@@ -65,5 +54,5 @@ private:
 	~MemoryTracker() = default;
 
 	std::unordered_map<size_t, unsigned> _allocatedMap{};
-	unsigned _genericAllocations = 0;
+	unsigned _totalAllocation = 0;
 };
