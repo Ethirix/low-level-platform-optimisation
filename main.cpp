@@ -274,6 +274,7 @@ void mouse(int button, int state, int x, int y) {
         if (clickedBoxOK != false) {
             // TODO
         	colliders.remove(intersectedBox);
+            delete intersectedBox;
         }
     }
 }

@@ -70,6 +70,8 @@ public:
 
     virtual void drawMesh() {};
 
+    virtual ~ColliderObject() = default;
+
     void update(std::list<ColliderObject*>* colliders, const float& deltaTime)
     {
         const float floorY = 0.0f;
