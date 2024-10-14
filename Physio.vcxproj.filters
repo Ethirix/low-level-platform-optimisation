@@ -24,13 +24,16 @@
     <ClInclude Include="Sphere.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="MemoryTracker.h">
+    <ClInclude Include="TypedMemoryTracker.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="Vec3.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="ColliderObject.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryTracker.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

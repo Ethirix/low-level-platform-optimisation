@@ -290,7 +290,8 @@ void keyboard(unsigned char key, int x, int y) {
     }
     else if (key == '1') { // 1
 
-        std::cout << "Memory used: " << MemoryTracker::Get().GetTotalAllocation() << '\n';
+        std::cout << "Memory used: " << MemoryTracker::Get().GetAllocation() << '\n';
+        std::cout << "Box Memory used: " << Box::MemoryTracker.GetAllocation() << '\n';
     }
 }
 
