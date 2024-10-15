@@ -1,5 +1,4 @@
 #pragma once
-#include <typeinfo>
 
 template <typename T>
 class TypedMemoryTracker

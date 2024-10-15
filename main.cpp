@@ -18,8 +18,8 @@
 using namespace std::chrono;
 
 // this is the number of falling physical items. 
-#define NUMBER_OF_BOXES 500
-#define NUMBER_OF_SPHERES 500
+#define NUMBER_OF_BOXES 5
+#define NUMBER_OF_SPHERES 5
 
 #define RESOLUTION_X 1920
 #define RESOLUTION_Y 1080
@@ -60,7 +60,7 @@ void initScene(int boxCount, int sphereCount) {
     }
 
     for (int i = 0; i < sphereCount; ++i) {
-        Sphere* sphere = new Sphere;
+        Sphere* sphere = new Sphere();
 
         // Assign random x, y, and z positions within specified ranges
         sphere->position.x = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
@@ -272,7 +272,6 @@ void mouse(int button, int state, int x, int y) {
 
         // Remove the clicked box if any
         if (clickedBoxOK != false) {
-            // TODO
         	colliders.remove(intersectedBox);
             delete intersectedBox;
         }
@@ -283,15 +282,26 @@ void mouse(int button, int state, int x, int y) {
 void keyboard(unsigned char key, int x, int y) {
     const float impulseMagnitude = 20.0f; // Upward impulse magnitude
 
-    if (key == ' ') { // Spacebar key
+    if (key == ' ') // Spacebar key 
+    { 
         for (ColliderObject* box : colliders) {
             box->velocity.y += impulseMagnitude;
         }
     }
-    else if (key == '1') { // 1
-
+    else if (key == '1')
+    { 
         std::cout << "Memory used: " << MemoryTracker::Get().GetAllocation() << '\n';
         std::cout << "Box Memory used: " << Box::MemoryTracker.GetAllocation() << '\n';
+        std::cout << "Sphere Memory Used: " << Sphere::MemoryTracker.GetAllocation() << '\n';
+    }
+    else if (key == '2')
+    {
+	    for (ColliderObject* collider : colliders)
+	    {
+            delete collider;
+	    }
+
+        colliders.clear();
     }
 }
 

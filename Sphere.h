@@ -1,10 +1,29 @@
 #pragma once
+
+#include <iostream>
+
 #include "ColliderObject.h"
-class Sphere :
-    public ColliderObject
+#include "TypedMemoryTracker.h"
+
+class Sphere : public ColliderObject
 {
 public:
 
+	void* operator new(size_t size)
+	{
+		std::cout << "Sphere Allocation: ";
+		MemoryTracker.AddAllocation();
+		return ::operator new(size);
+	}
+
+	void operator delete(void* pMemory)
+	{
+		MemoryTracker.RemoveAllocation();
+		::operator delete(pMemory);
+	}
+
     void drawMesh() override { glutSolidSphere(0.5, 5, 5); }
+
+	inline static TypedMemoryTracker<Sphere> MemoryTracker;
 }; 
 
