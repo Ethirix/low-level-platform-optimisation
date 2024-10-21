@@ -329,6 +329,7 @@ int main(int argc, char** argv) {
     glutIdleFunc(idle);
 
     // it will stick here until the program ends. 
+    MemoryTracker::Get().RemoveAllocation(44); // Removed random 44byte allocation before main even runs
     glutMainLoop();
     return 0;
 }
