@@ -303,6 +303,10 @@ void keyboard(unsigned char key, int x, int y) {
 
         colliders.clear();
     }
+    else if (key == '3')
+    {
+        
+    }
 }
 
 // the main function. 

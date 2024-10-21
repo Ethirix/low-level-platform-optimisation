@@ -11,7 +11,6 @@ public:
 
 	void* operator new(size_t size)
 	{
-		std::cout << "Sphere Allocation: ";
 		MemoryTracker.AddAllocation();
 		return ::operator new(size);
 	}

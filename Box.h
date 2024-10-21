@@ -10,7 +10,6 @@ class Box : public ColliderObject
 public:
 	void* operator new(size_t size)
 	{
-		std::cout << "Box Allocation: ";
 		MemoryTracker.AddAllocation();
 		return ::operator new(size);
 	}
