@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "globals.h"
 #include "MemoryFooter.h"
 #include "MemoryHeader.h"
 #include "MemoryTracker.h"
@@ -14,12 +15,12 @@ void* operator new(const size_t size)
 	char* pMemory = (char*)malloc(wrappedSize);
 
 	MemoryHeader* header = (MemoryHeader*)pMemory;
-	header->UnderflowTest = 0x5E7F100D;
+	header->UnderflowTest = UNDERFLOW_TEST;
 	header->Size = wrappedSize;
 	header->Previous = MemoryHeader::Last;
 
 	MemoryFooter* footer = (MemoryFooter*)(pMemory + sizeof(MemoryHeader) + size);
-	footer->OverflowTest = 0xF100D5E7;
+	footer->OverflowTest = OVERFLOW_TEST;
 	footer->Header = header;
 	footer->Next = nullptr;
 	header->Footer = footer;
@@ -38,7 +39,7 @@ void operator delete(void* pMemory)
 	MemoryHeader* header = (MemoryHeader*)((char*)pMemory - sizeof(MemoryHeader));
 
 	//What should happen if the header does get overwritten as the size is lost.
-	if (header->UnderflowTest != 0x5E7F100D)
+	if (header->UnderflowTest != UNDERFLOW_TEST)
 	{
 		std::cout << "Err: Header Overwritten!" << '\n';
 		//This? (rejig headers and footers as well)
@@ -50,10 +51,19 @@ void operator delete(void* pMemory)
 
 	MemoryFooter* footer = header->Footer;
 	
-	if (footer->OverflowTest != 0xF100D5E7)
+	if (footer->OverflowTest != OVERFLOW_TEST)
 		std::cout << "Err: Footer Overwritten!" << '\n';
 
-	header->Previous->Next = footer->Next;
+	if (footer->Next)
+	{
+		header->Previous->Next = footer->Next;
+		footer->Next->Previous = header->Previous;
+	}
+	else
+	{
+		MemoryHeader::Last = header->Previous;
+		header->Previous->Next = nullptr;
+	}
 	
 	free(header);
 }

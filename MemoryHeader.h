@@ -4,7 +4,7 @@ struct MemoryFooter;
 
 struct MemoryHeader
 {
-	unsigned UnderflowTest = 0x5E7F100D;
+	unsigned UnderflowTest = UNDERFLOW_TEST;
 	size_t Size;
 
 	MemoryFooter* Footer = nullptr;

@@ -4,7 +4,7 @@ struct MemoryHeader;
 
 struct MemoryFooter
 {
-	unsigned OverflowTest = 0xF100D5E7;
+	unsigned OverflowTest = OVERFLOW_TEST;
 
 	MemoryHeader* Header = nullptr;
 	MemoryHeader* Next = nullptr;

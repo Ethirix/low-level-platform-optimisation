@@ -21,7 +21,7 @@ public:
 		::operator delete(pMemory);
 	}
 
-    void drawMesh() override { glutSolidSphere(0.5, 5, 5); }
+    void DrawMesh() override { glutSolidSphere(0.5, 5, 5); }
 
 	inline static TypedMemoryTracker<Sphere> MemoryTracker;
 }; 

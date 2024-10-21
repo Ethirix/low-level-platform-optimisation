@@ -4,29 +4,28 @@
 
 class Vec3 {
 public:
-    float x, y, z;
+    float X, Y, Z;
 
-    Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
-    Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
+    Vec3() : X(0.0f), Y(0.0f), Z(0.0f) {}
+    Vec3(float x, float y, float z) : X(x), Y(y), Z(z) {}
 
     // overload the minus operator
     Vec3 operator-(const Vec3& other) const {
-        return Vec3(x - other.x, y - other.y, z - other.z);
+        return {X - other.X, Y - other.Y, Z - other.Z};
     }
 
     // Normalize the vector
-    void normalise() {
-        float length = std::sqrt(x * x + y * y + z * z);
-        if (length != 0) {
-            x /= length;
-            y /= length;
-            z /= length;
+    void Normalise() {
+	    if (float length = std::sqrt(X * X + Y * Y + Z * Z); length != 0.0f) {
+            X /= length;
+            Y /= length;
+            Z /= length;
         }
     }
 
     // get the length of a vector
-    float length() const {
-        return std::sqrt(x * x + y * y + z * z);
+    [[nodiscard]] float Length() const {
+        return std::sqrt(X * X + Y * Y + Z * Z);
     }
 };
 
