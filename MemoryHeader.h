@@ -8,5 +8,7 @@ struct MemoryHeader
 	size_t Size;
 
 	MemoryFooter* Footer = nullptr;
-	MemoryFooter* Last = nullptr;
+	MemoryFooter* Previous = nullptr;
+
+	static inline MemoryFooter* Last = nullptr;
 };

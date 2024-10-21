@@ -8,8 +8,6 @@
 
 void* operator new(const size_t size)
 {
-	static MemoryFooter* lastFooter = nullptr;
-
 	const size_t wrappedSize = sizeof(MemoryHeader) + size + sizeof(MemoryFooter);
 
 	MemoryTracker::Get().AddAllocation(wrappedSize);
@@ -18,7 +16,7 @@ void* operator new(const size_t size)
 	MemoryHeader* header = (MemoryHeader*)pMemory;
 	header->UnderflowTest = 0x5E7F100D;
 	header->Size = wrappedSize;
-	header->Last = lastFooter;
+	header->Previous = MemoryHeader::Last;
 
 	MemoryFooter* footer = (MemoryFooter*)(pMemory + sizeof(MemoryHeader) + size);
 	footer->OverflowTest = 0xF100D5E7;
@@ -26,10 +24,10 @@ void* operator new(const size_t size)
 	footer->Next = nullptr;
 	header->Footer = footer;
 
-	if (lastFooter)
-		lastFooter->Next = header;
+	if (MemoryHeader::Last)
+		MemoryHeader::Last->Next = header;
 
-	lastFooter = footer;
+	MemoryHeader::Last = footer;
 
 	void* pStartMemoryBlock = pMemory + sizeof(MemoryHeader);
 	return pStartMemoryBlock;
@@ -50,12 +48,12 @@ void operator delete(void* pMemory)
 
 	MemoryTracker::Get().RemoveAllocation(header->Size);
 
-	MemoryFooter* footer = (MemoryFooter*)((char*)pMemory + header->Size);
+	MemoryFooter* footer = header->Footer;
 	
 	if (footer->OverflowTest != 0xF100D5E7)
 		std::cout << "Err: Footer Overwritten!" << '\n';
 
-	header->Last->Next = footer->Next;
+	header->Previous->Next = footer->Next;
 	
 	free(header);
 }

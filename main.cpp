@@ -305,14 +305,15 @@ void keyboard(unsigned char key, int x, int y) {
     }
     else if (key == '3')
     {
-        
+        //TODO: Walk the Heap
     }
 }
 
 // the main function. 
 int main(int argc, char** argv) {
     srand(static_cast<unsigned>(time(nullptr))); // Seed random number generator
-    glutInit(&argc, argv);
+    MemoryTracker::Get().RemoveAllocation(MemoryTracker::Get().GetAllocation()); // Removed random byte allocation before main even runs
+	glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(RESOLUTION_X, RESOLUTION_Y);
     glutCreateWindow("Simple Physics Simulation");
@@ -333,7 +334,6 @@ int main(int argc, char** argv) {
     glutIdleFunc(idle);
 
     // it will stick here until the program ends. 
-    MemoryTracker::Get().RemoveAllocation(44); // Removed random 44byte allocation before main even runs
     glutMainLoop();
     return 0;
 }
