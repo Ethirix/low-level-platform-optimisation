@@ -11,20 +11,22 @@
 #include "Vec3.h"
 #include "ColliderObject.h"
 #include "Box.h"
+#include "MemoryFooter.h"
+#include "MemoryHeader.h"
 #include "MemoryTracker.h"
 #include "Sphere.h"
 
 
 using namespace std::chrono;
 
-// this is the number of falling physical items. 
-#define NUMBER_OF_BOXES 500
-#define NUMBER_OF_SPHERES 500
+// This is the number of falling physical items. 
+#define NUMBER_OF_BOXES 5
+#define NUMBER_OF_SPHERES 5
 
 #define RESOLUTION_X 1920
 #define RESOLUTION_Y 1080
 
-// these is where the camera is, where it is looking and the bounds of the continaing box. You shouldn't need to alter these
+// This is where the camera is, where it is looking and the bounds of the containing box. You shouldn't need to alter these
 
 #define LOOKAT_X 10
 #define LOOKAT_Y 10
@@ -34,63 +36,65 @@ using namespace std::chrono;
 #define LOOKDIR_Y 0
 #define LOOKDIR_Z 0
 
-std::list<ColliderObject*> colliders;
+std::list<ColliderObject*> Colliders;
 
-void initScene(int boxCount, int sphereCount) {
+void InitScene(int boxCount, int sphereCount)
+{
     for (int i = 0; i < boxCount; ++i) {
         Box* box = new Box();
 
         // Assign random x, y, and z positions within specified ranges
-        box->position.x = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
-        box->position.y = 10.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 1.0f));
-        box->position.z = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
+        box->Position.X = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
+        box->Position.Y = 10.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 1.0f));
+        box->Position.Z = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
 
-        box->size = {1.0f, 1.0f, 1.0f};
+        box->Size = {1.0f, 1.0f, 1.0f};
 
         // Assign random x-velocity between -1.0f and 1.0f
         float randomXVelocity = -1.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 2.0f));
-        box->velocity = {randomXVelocity, 0.0f, 0.0f};
+        box->Velocity = {randomXVelocity, 0.0f, 0.0f};
 
         // Assign a random color to the box
-        box->colour.x = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        box->colour.y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        box->colour.z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        box->Colour.X = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        box->Colour.Y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        box->Colour.Z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 
-        colliders.push_back(box);
+        Colliders.push_back(box);
     }
 
     for (int i = 0; i < sphereCount; ++i) {
-        Sphere* sphere = new Sphere;
+        Sphere* sphere = new Sphere();
 
         // Assign random x, y, and z positions within specified ranges
-        sphere->position.x = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
-        sphere->position.y = 10.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 1.0f));
-        sphere->position.z = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
+        sphere->Position.X = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
+        sphere->Position.Y = 10.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 1.0f));
+        sphere->Position.Z = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
 
-        sphere->size = { 1.0f, 1.0f, 1.0f };
+        sphere->Size = { 1.0f, 1.0f, 1.0f };
 
         // Assign random x-velocity between -1.0f and 1.0f
         float randomXVelocity = -1.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 2.0f));
-        sphere->velocity = { randomXVelocity, 0.0f, 0.0f };
+        sphere->Velocity = { randomXVelocity, 0.0f, 0.0f };
 
         // Assign a random color to the box
-        sphere->colour.x = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        sphere->colour.y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        sphere->colour.z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        sphere->Colour.X = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        sphere->Colour.Y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        sphere->Colour.Z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 
-        colliders.push_back(sphere);
+        Colliders.push_back(sphere);
     }
 }
 
 // a ray which is used to tap (by default, remove) a box - see the 'mouse' function for how this is used.
-bool rayBoxIntersection(const Vec3& rayOrigin, const Vec3& rayDirection, const ColliderObject* box) {
-    float tMin = (box->position.x - box->size.x / 2.0f - rayOrigin.x) / rayDirection.x;
-    float tMax = (box->position.x + box->size.x / 2.0f - rayOrigin.x) / rayDirection.x;
+bool RayBoxIntersection(const Vec3& rayOrigin, const Vec3& rayDirection, const ColliderObject* box)
+{
+    float tMin = (box->Position.X - box->Size.X / 2.0f - rayOrigin.X) / rayDirection.X;
+    float tMax = (box->Position.X + box->Size.X / 2.0f - rayOrigin.X) / rayDirection.X;
 
     if (tMin > tMax) std::swap(tMin, tMax);
 
-    float tyMin = (box->position.y - box->size.y / 2.0f - rayOrigin.y) / rayDirection.y;
-    float tyMax = (box->position.y + box->size.y / 2.0f - rayOrigin.y) / rayDirection.y;
+    float tyMin = (box->Position.Y - box->Size.Y / 2.0f - rayOrigin.Y) / rayDirection.Y;
+    float tyMax = (box->Position.Y + box->Size.Y / 2.0f - rayOrigin.Y) / rayDirection.Y;
 
     if (tyMin > tyMax) std::swap(tyMin, tyMax);
 
@@ -103,8 +107,8 @@ bool rayBoxIntersection(const Vec3& rayOrigin, const Vec3& rayDirection, const C
     if (tyMax < tMax)
         tMax = tyMax;
 
-    float tzMin = (box->position.z - box->size.z / 2.0f - rayOrigin.z) / rayDirection.z;
-    float tzMax = (box->position.z + box->size.z / 2.0f - rayOrigin.z) / rayDirection.z;
+    float tzMin = (box->Position.Z - box->Size.Z / 2.0f - rayOrigin.Z) / rayDirection.Z;
+    float tzMax = (box->Position.Z + box->Size.Z / 2.0f - rayOrigin.Z) / rayDirection.Z;
 
     if (tzMin > tzMax) std::swap(tzMin, tzMax);
 
@@ -115,14 +119,15 @@ bool rayBoxIntersection(const Vec3& rayOrigin, const Vec3& rayDirection, const C
 }
 
 // used in the 'mouse' tap function to convert a screen point to a point in the world
-Vec3 screenToWorld(int x, int y) {
+Vec3 ScreenToWorld(int x, int y)
+{
     GLint viewport[4];
-    GLdouble modelview[16];
+    GLdouble modelView[16];
     GLdouble projection[16];
     GLfloat winX, winY, winZ;
     GLdouble posX, posY, posZ;
 
-    glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+    glGetDoublev(GL_MODELVIEW_MATRIX, modelView);
     glGetDoublev(GL_PROJECTION_MATRIX, projection);
     glGetIntegerv(GL_VIEWPORT, viewport);
 
@@ -130,97 +135,95 @@ Vec3 screenToWorld(int x, int y) {
     winY = (float)viewport[3] - (float)y;
     glReadPixels(x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
 
-    gluUnProject(winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
+    gluUnProject(winX, winY, winZ, modelView, projection, viewport, &posX, &posY, &posZ);
 
     return Vec3((float)posX, (float)posY, (float)posZ);
 }
 
-
-
-
 // update the physics: gravity, collision test, collision resolution
-void updatePhysics(const float deltaTime) {
-    
-    // todo for the assessment - use a thread for each sub-region
+void UpdatePhysics(const float deltaTime)
+{
+    // TODO for the assessment - use a thread for each sub-region
     // for example, assuming we have two regions:
     // from 'colliders' create two separate lists
     // empty each list (from previous frame) and work out which collidable object is in which region, 
     //  and add the pointer to that region's list.
     // Then, run two threads with the code below (changing 'colliders' to be the region's list)
 
-    for (ColliderObject* box : colliders) { 
+    for (ColliderObject* box : Colliders) { 
         
-        box->update(&colliders, deltaTime);
+        box->Update(&Colliders, deltaTime);
         
     }
 }
 
 // draw the sides of the containing area
-void drawQuad(const Vec3& v1, const Vec3& v2, const Vec3& v3, const Vec3& v4) {
-    
+void DrawQuad(const Vec3& v1, const Vec3& v2, const Vec3& v3, const Vec3& v4)
+{
     glBegin(GL_QUADS);
-    glVertex3f(v1.x, v1.y, v1.z);
-    glVertex3f(v2.x, v2.y, v2.z);
-    glVertex3f(v3.x, v3.y, v3.z);
-    glVertex3f(v4.x, v4.y, v4.z);
+    glVertex3f(v1.X, v1.Y, v1.Z);
+    glVertex3f(v2.X, v2.Y, v2.Z);
+    glVertex3f(v3.X, v3.Y, v3.Z);
+    glVertex3f(v4.X, v4.Y, v4.Z);
     glEnd();
 }
 
 
 
 // draw the entire scene
-void drawScene() {
-
+void DrawScene()
+{
     // Draw the side wall
     GLfloat diffuseMaterial[] = {0.2f, 0.2f, 0.2f, 1.0f};
     glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuseMaterial);
 
     // Draw the left side wall
     glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vec3 leftSideWallV1(minX, 0.0f, maxZ);
-    Vec3 leftSideWallV2(minX, 50.0f, maxZ);
-    Vec3 leftSideWallV3(minX, 50.0f, minZ);
-    Vec3 leftSideWallV4(minX, 0.0f, minZ);
-    drawQuad(leftSideWallV1, leftSideWallV2, leftSideWallV3, leftSideWallV4);
+    Vec3 leftSideWallV1(MIN_X, 0.0f, MAX_Z);
+    Vec3 leftSideWallV2(MIN_X, 50.0f, MAX_Z);
+    Vec3 leftSideWallV3(MIN_X, 50.0f, MIN_Z);
+    Vec3 leftSideWallV4(MIN_X, 0.0f, MIN_Z);
+    DrawQuad(leftSideWallV1, leftSideWallV2, leftSideWallV3, leftSideWallV4);
 
     // Draw the right side wall
     glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vec3 rightSideWallV1(maxX, 0.0f, maxZ);
-    Vec3 rightSideWallV2(maxX, 50.0f, maxZ);
-    Vec3 rightSideWallV3(maxX, 50.0f, minZ);
-    Vec3 rightSideWallV4(maxX, 0.0f, minZ);
-    drawQuad(rightSideWallV1, rightSideWallV2, rightSideWallV3, rightSideWallV4);
+    Vec3 rightSideWallV1(MAX_X, 0.0f, MAX_Z);
+    Vec3 rightSideWallV2(MAX_X, 50.0f, MAX_Z);
+    Vec3 rightSideWallV3(MAX_X, 50.0f, MIN_Z);
+    Vec3 rightSideWallV4(MAX_X, 0.0f, MIN_Z);
+    DrawQuad(rightSideWallV1, rightSideWallV2, rightSideWallV3, rightSideWallV4);
 
 
     // Draw the back wall
     glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vec3 backWallV1(minX, 0.0f, minZ);
-    Vec3 backWallV2(minX, 50.0f, minZ);
-    Vec3 backWallV3(maxX, 50.0f, minZ);
-    Vec3 backWallV4(maxX, 0.0f, minZ);
-    drawQuad(backWallV1, backWallV2, backWallV3, backWallV4);
+    Vec3 backWallV1(MIN_X, 0.0f, MIN_Z);
+    Vec3 backWallV2(MIN_X, 50.0f, MIN_Z);
+    Vec3 backWallV3(MAX_X, 50.0f, MIN_Z);
+    Vec3 backWallV4(MAX_X, 0.0f, MIN_Z);
+    DrawQuad(backWallV1, backWallV2, backWallV3, backWallV4);
 
-    for (ColliderObject* box : colliders) {
-        box->draw();
+    for (ColliderObject* box : Colliders) {
+        box->Draw();
     }
 }
 
 // called by GLUT - displays the scene
-void display() {
+void Display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
     gluLookAt(LOOKAT_X, LOOKAT_Y, LOOKAT_Z, LOOKDIR_X, LOOKDIR_Y, LOOKDIR_Z, 0, 1, 0);
 
-    drawScene();
+    DrawScene();
 
     glutSwapBuffers();
 }
 
-// called by GLUT when the cpu is idle - has a timer function you can use for FPS, and updates the physics
+// Called by GLUT when the cpu is idle - has a timer function you can use for FPS, and updates the physics
 // see https://www.opengl.org/resources/libraries/glut/spec3/node63.html#:~:text=glutIdleFunc
 // NOTE this may be capped at 60 fps as we are using glutPostRedisplay(). If you want it to go higher than this, maybe a thread will help here. 
-void idle() {
+void Idle()
+{
     static auto last = steady_clock::now();
     auto old = last;
     last = steady_clock::now();
@@ -230,39 +233,39 @@ void idle() {
     if (deltaTime > 1)
         return;
 
-    updatePhysics(deltaTime);
+    UpdatePhysics(deltaTime);
 
     // tell glut to draw - note this will cap this function at 60 fps
     glutPostRedisplay();
 }
 
 // called the mouse button is tapped
-void mouse(int button, int state, int x, int y) {
+void Mouse(int button, int state, int x, int y)
+{
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         // Get the camera position and direction
         Vec3 cameraPosition(LOOKAT_X, LOOKAT_Y, LOOKAT_Z); // Replace with your actual camera position
         Vec3 cameraDirection(LOOKDIR_X, LOOKDIR_Y, LOOKDIR_Z); // Replace with your actual camera direction
 
         // Get the world coordinates of the clicked point
-        Vec3 clickedWorldPos = screenToWorld(x, y);
+        Vec3 clickedWorldPos = ScreenToWorld(x, y);
 
         // Calculate the ray direction from the camera position to the clicked point
         Vec3 rayDirection = clickedWorldPos - cameraPosition;
-        rayDirection.normalise();
+        rayDirection.Normalise();
 
         // Perform a ray-box intersection test and remove the clicked box
         bool clickedBoxOK = false;
         float minIntersectionDistance = std::numeric_limits<float>::max();
 
         ColliderObject* intersectedBox = nullptr;
-        for (ColliderObject* box : colliders) {
-            if (rayBoxIntersection(cameraPosition, rayDirection, box)) {
+        for (ColliderObject* box : Colliders) {
+            if (RayBoxIntersection(cameraPosition, rayDirection, box)) {
                 // Calculate the distance between the camera and the intersected box
-                Vec3 diff = box->position - cameraPosition;
-                float distance = diff.length();
+                Vec3 diff = box->Position - cameraPosition;
 
                 // Update the clicked box index if this box is closer to the camera
-                if (distance < minIntersectionDistance) {
+                if (float distance = diff.Length(); distance < minIntersectionDistance) {
                     clickedBoxOK = true;
                     minIntersectionDistance = distance;
                     intersectedBox = box;
@@ -272,39 +275,83 @@ void mouse(int button, int state, int x, int y) {
 
         // Remove the clicked box if any
         if (clickedBoxOK != false) {
-            // TODO
-        	colliders.remove(intersectedBox);
+        	Colliders.remove(intersectedBox);
             delete intersectedBox;
         }
     }
 }
 
-// called when the keyboard is used
-void keyboard(unsigned char key, int x, int y) {
-    const float impulseMagnitude = 20.0f; // Upward impulse magnitude
+void HeapChecker()
+{
+    std::cout << "Heap Walk Started\n";
+    MemoryFooter* currentNode = MemoryHeader::Last;
+    unsigned i = 0;
 
-    if (key == ' ') { // Spacebar key
-        for (ColliderObject* box : colliders) {
-            box->velocity.y += impulseMagnitude;
+    while(currentNode)
+    {
+        if (currentNode->OverflowTest != OVERFLOW_TEST)
+        {
+	        std::cout << "Err: Overflow Test Failed" << '\n';
+            return;
+        }
+        if (currentNode->Header->UnderflowTest != UNDERFLOW_TEST)
+        {
+            std::cout << "Err: Underflow Test Failed" << '\n';
+            return;
+        }
+
+        std::cout << ++i << ". Size: " << currentNode->Header->Size << " bytes\n";
+        currentNode = currentNode->Header->Previous;
+    }
+
+	std::cout << "Heap Walk Successful\n\n";
+}
+
+// called when the keyboard is used
+void Keyboard(unsigned char key, int x, int y)
+{
+	if (key == ' ') // Spacebar key 
+    { 
+        for (ColliderObject* box : Colliders)
+        {
+	        constexpr float impulseMagnitude = 20.0f;
+	        box->Velocity.Y += impulseMagnitude;
         }
     }
-    else if (key == '1') { // 1
-
+    else if (key == '1')
+    { 
         std::cout << "Memory used: " << MemoryTracker::Get().GetAllocation() << '\n';
         std::cout << "Box Memory used: " << Box::MemoryTracker.GetAllocation() << '\n';
+        std::cout << "Sphere Memory Used: " << Sphere::MemoryTracker.GetAllocation() << '\n';
+        std::cout << '\n';
+    }
+    else if (key == '2')
+    {
+	    for (ColliderObject* collider : Colliders)
+	    {
+            delete collider;
+	    }
+
+        Colliders.clear();
+    }
+    else if (key == '3')
+    {
+        HeapChecker();
     }
 }
 
-// the main function. 
-int main(int argc, char** argv) {
+// The main function. 
+int main(int argc, char** argv)
+{
     srand(static_cast<unsigned>(time(nullptr))); // Seed random number generator
-    glutInit(&argc, argv);
+    MemoryTracker::Get().RemoveAllocation(MemoryTracker::Get().GetAllocation()); // Removed random byte allocation before main even runs
+	glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(RESOLUTION_X, RESOLUTION_Y);
     glutCreateWindow("Simple Physics Simulation");
 
-    glutKeyboardFunc(keyboard);
-    glutMouseFunc(mouse);
+    glutKeyboardFunc(Keyboard);
+    glutMouseFunc(Mouse);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
@@ -314,9 +361,9 @@ int main(int argc, char** argv) {
     gluPerspective(45.0, static_cast<double>(RESOLUTION_X) / RESOLUTION_Y, 0.1, 100.0);
     glMatrixMode(GL_MODELVIEW);
 
-    initScene(NUMBER_OF_BOXES, NUMBER_OF_SPHERES);
-    glutDisplayFunc(display);
-    glutIdleFunc(idle);
+    InitScene(NUMBER_OF_BOXES, NUMBER_OF_SPHERES);
+    glutDisplayFunc(Display);
+    glutIdleFunc(Idle);
 
     // it will stick here until the program ends. 
     glutMainLoop();
