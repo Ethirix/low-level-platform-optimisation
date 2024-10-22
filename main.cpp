@@ -37,6 +37,8 @@ using namespace std::chrono;
 #define LOOKDIR_Y 0
 #define LOOKDIR_Z 0
 
+#define DEBUG_INT_ALLOC_SIZE 64
+
 std::list<ColliderObject*> Colliders;
 
 void CreateBox()
@@ -321,7 +323,8 @@ void HeapChecker()
 // called when the keyboard is used
 void Keyboard(unsigned char key, int x, int y)
 {
-    static std::vector<int*> randomData{};
+    static int* randomData[DEBUG_INT_ALLOC_SIZE];
+    static unsigned index;
 	if (key == ' ') // Spacebar key 
     { 
         for (ColliderObject* box : Colliders)
@@ -339,15 +342,21 @@ void Keyboard(unsigned char key, int x, int y)
     }
     else if (key == 't')
     {
-        randomData.emplace_back(new int[10]);
+        if (index < DEBUG_INT_ALLOC_SIZE)
+        {
+	        randomData[index++] = new int[8];
+        }
+        else
+        {
+	        std::cout << "Err: Max Testing Heap Allocation Reached - Size: " << DEBUG_INT_ALLOC_SIZE << '\n';
+        }
     }
     else if (key == 'u')
     {
-        if (!randomData.empty())
+        if (index > 0)
         {
-            delete[] randomData.at(randomData.size() - 1);
-	        randomData.erase(randomData.end() - 1);
-            randomData.shrink_to_fit();
+        	int* data = randomData[index--];
+	        delete[] data;
         }
     }
     else if (key == '2')
