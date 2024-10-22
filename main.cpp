@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <chrono>
+#include <vector>
 
 #include "globals.h"
 #include "Vec3.h"
@@ -38,50 +39,60 @@ using namespace std::chrono;
 
 std::list<ColliderObject*> Colliders;
 
+void CreateBox()
+{
+    Box* box = new Box();
+
+    // Assign random x, y, and z positions within specified ranges
+    box->Position.X = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
+    box->Position.Y = 10.0f + static_cast<float>(rand()) / (RAND_MAX / 1.0f);
+    box->Position.Z = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
+
+    box->Size = { 1.0f, 1.0f, 1.0f };
+
+    // Assign random x-velocity between -1.0f and 1.0f
+    float randomXVelocity = -1.0f + static_cast<float>(rand()) / (RAND_MAX / 2.0f);
+    box->Velocity = { randomXVelocity, 0.0f, 0.0f };
+
+    // Assign a random color to the box
+    box->Colour.X = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    box->Colour.Y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    box->Colour.Z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+
+    Colliders.push_back(box);
+}
+
+void CreateSphere()
+{
+    Sphere* sphere = new Sphere();
+
+    // Assign random x, y, and z positions within specified ranges
+    sphere->Position.X = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
+    sphere->Position.Y = 10.0f + static_cast<float>(rand()) / (RAND_MAX / 1.0f);
+    sphere->Position.Z = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
+
+    sphere->Size = { 1.0f, 1.0f, 1.0f };
+
+    // Assign random x-velocity between -1.0f and 1.0f
+    float randomXVelocity = -1.0f + static_cast<float>(rand()) / (RAND_MAX / 2.0f);
+    sphere->Velocity = { randomXVelocity, 0.0f, 0.0f };
+
+    // Assign a random color to the box
+    sphere->Colour.X = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    sphere->Colour.Y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    sphere->Colour.Z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+
+    Colliders.push_back(sphere);
+}
+
 void InitScene(int boxCount, int sphereCount)
 {
     for (int i = 0; i < boxCount; ++i) {
-        Box* box = new Box();
-
-        // Assign random x, y, and z positions within specified ranges
-        box->Position.X = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
-        box->Position.Y = 10.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 1.0f));
-        box->Position.Z = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
-
-        box->Size = {1.0f, 1.0f, 1.0f};
-
-        // Assign random x-velocity between -1.0f and 1.0f
-        float randomXVelocity = -1.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 2.0f));
-        box->Velocity = {randomXVelocity, 0.0f, 0.0f};
-
-        // Assign a random color to the box
-        box->Colour.X = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        box->Colour.Y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        box->Colour.Z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-
-        Colliders.push_back(box);
+        CreateBox();
     }
 
     for (int i = 0; i < sphereCount; ++i) {
-        Sphere* sphere = new Sphere();
-
-        // Assign random x, y, and z positions within specified ranges
-        sphere->Position.X = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
-        sphere->Position.Y = 10.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 1.0f));
-        sphere->Position.Z = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 20.0f));
-
-        sphere->Size = { 1.0f, 1.0f, 1.0f };
-
-        // Assign random x-velocity between -1.0f and 1.0f
-        float randomXVelocity = -1.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 2.0f));
-        sphere->Velocity = { randomXVelocity, 0.0f, 0.0f };
-
-        // Assign a random color to the box
-        sphere->Colour.X = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        sphere->Colour.Y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        sphere->Colour.Z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-
-        Colliders.push_back(sphere);
+        CreateSphere();
     }
 }
 
@@ -310,6 +321,7 @@ void HeapChecker()
 // called when the keyboard is used
 void Keyboard(unsigned char key, int x, int y)
 {
+    static std::vector<int*> randomData{};
 	if (key == ' ') // Spacebar key 
     { 
         for (ColliderObject* box : Colliders)
@@ -318,12 +330,25 @@ void Keyboard(unsigned char key, int x, int y)
 	        box->Velocity.Y += impulseMagnitude;
         }
     }
-    else if (key == '1')
+    else if (key == 'm')
     { 
         std::cout << "Memory used: " << MemoryTracker::Get().GetAllocation() << '\n';
         std::cout << "Box Memory used: " << Box::MemoryTracker.GetAllocation() << '\n';
         std::cout << "Sphere Memory Used: " << Sphere::MemoryTracker.GetAllocation() << '\n';
         std::cout << '\n';
+    }
+    else if (key == 't')
+    {
+        randomData.emplace_back(new int[10]);
+    }
+    else if (key == 'u')
+    {
+        if (!randomData.empty())
+        {
+            delete[] randomData.at(randomData.size() - 1);
+	        randomData.erase(randomData.end() - 1);
+            randomData.shrink_to_fit();
+        }
     }
     else if (key == '2')
     {
@@ -334,7 +359,7 @@ void Keyboard(unsigned char key, int x, int y)
 
         Colliders.clear();
     }
-    else if (key == '3')
+    else if (key == 'w')
     {
         HeapChecker();
     }
