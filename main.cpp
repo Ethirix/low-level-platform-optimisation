@@ -41,60 +41,56 @@ using namespace std::chrono;
 
 std::list<ColliderObject*> Colliders;
 
-void CreateBox()
+template <typename T>
+void DeleteColliderOfType() requires std::derived_from<T, ColliderObject> && !std::is_same_v<T, ColliderObject>
 {
-    Box* box = new Box();
+    if (Colliders.empty())
+        return;
 
-    // Assign random x, y, and z positions within specified ranges
-    box->Position.X = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
-    box->Position.Y = 10.0f + static_cast<float>(rand()) / (RAND_MAX / 1.0f);
-    box->Position.Z = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
+    T* obj = nullptr;
+    for (ColliderObject* collider : Colliders)
+    {
+        obj = dynamic_cast<T*>(collider);
+        if (obj)
+            break;
+    }
 
-    box->Size = { 1.0f, 1.0f, 1.0f };
-
-    // Assign random x-velocity between -1.0f and 1.0f
-    float randomXVelocity = -1.0f + static_cast<float>(rand()) / (RAND_MAX / 2.0f);
-    box->Velocity = { randomXVelocity, 0.0f, 0.0f };
-
-    // Assign a random color to the box
-    box->Colour.X = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-    box->Colour.Y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-    box->Colour.Z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-
-    Colliders.push_back(box);
+    Colliders.remove(obj);
+    delete obj;
 }
 
-void CreateSphere()
+template <typename T>
+void CreateObjectOfType() requires std::derived_from<T, ColliderObject> && !std::is_same_v<T, ColliderObject>
 {
-    Sphere* sphere = new Sphere();
+    T* obj = new T();
 
     // Assign random x, y, and z positions within specified ranges
-    sphere->Position.X = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
-    sphere->Position.Y = 10.0f + static_cast<float>(rand()) / (RAND_MAX / 1.0f);
-    sphere->Position.Z = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
+    obj->Position.X = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
+    obj->Position.Y = 10.0f + static_cast<float>(rand()) / (RAND_MAX / 1.0f);
+    obj->Position.Z = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
 
-    sphere->Size = { 1.0f, 1.0f, 1.0f };
+    obj->Size = { 1.0f, 1.0f, 1.0f };
 
     // Assign random x-velocity between -1.0f and 1.0f
     float randomXVelocity = -1.0f + static_cast<float>(rand()) / (RAND_MAX / 2.0f);
-    sphere->Velocity = { randomXVelocity, 0.0f, 0.0f };
+    obj->Velocity = { randomXVelocity, 0.0f, 0.0f };
 
     // Assign a random color to the box
-    sphere->Colour.X = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-    sphere->Colour.Y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-    sphere->Colour.Z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    obj->Colour.X = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    obj->Colour.Y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    obj->Colour.Z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 
-    Colliders.push_back(sphere);
+    Colliders.push_back(obj);
 }
 
 void InitScene(int boxCount, int sphereCount)
 {
     for (int i = 0; i < boxCount; ++i) {
-        CreateBox();
+        CreateObjectOfType<Box>();
     }
 
     for (int i = 0; i < sphereCount; ++i) {
-        CreateSphere();
+        CreateObjectOfType<Sphere>();
     }
 }
 
@@ -300,21 +296,40 @@ void HeapChecker()
     MemoryFooter* currentNode = MemoryHeader::Last;
     unsigned i = 0;
 
+
     while(currentNode)
     {
-        if (currentNode->OverflowTest != OVERFLOW_TEST)
+        std::cout << "Start of Memory Block " << ++i << '\n';
+        std::cout << "    Footer Test - ";
+        if (currentNode == nullptr || currentNode->OverflowTest != OVERFLOW_TEST)
         {
 	        std::cout << "Err: Overflow Test Failed" << '\n';
-            return;
         }
-        if (currentNode->Header->UnderflowTest != UNDERFLOW_TEST)
+        else
+        {
+            std::cout << "Success: Overflow Test Passed" << '\n';
+        }
+        std::cout << "    Header Test - ";
+
+        if (currentNode->Header == nullptr || currentNode->Header->UnderflowTest != UNDERFLOW_TEST)
         {
             std::cout << "Err: Underflow Test Failed" << '\n';
+        }
+        else
+        {
+            std::cout << "Success: Underflow Test Passed" << '\n';
+        }
+
+        if (currentNode->Header == nullptr)
+        {
+            std::cout << "CRITICAL ERROR: MEMORY HEADER IS NULL | BREAKING HEAP WALK" << '\n';
             return;
         }
 
-        std::cout << ++i << ". Size: " << currentNode->Header->Size << " bytes\n";
-        currentNode = currentNode->Header->Previous;
+        std::cout << "    Size: " << currentNode->Header->Size << " bytes\n";
+        std::cout << "End of Memory Block " << i << '\n';
+
+    	currentNode = currentNode->Header->Previous;
     }
 
 	std::cout << "Heap Walk Successful\n\n";
@@ -355,7 +370,7 @@ void Keyboard(unsigned char key, int x, int y)
     {
         if (index > 0)
         {
-        	int* data = randomData[index--];
+        	int* data = randomData[--index];
 	        delete[] data;
         }
     }
@@ -368,9 +383,79 @@ void Keyboard(unsigned char key, int x, int y)
 
         Colliders.clear();
     }
+    else if (key == 'f')
+    {
+        if (!MemoryHeader::Last)
+            return;
+
+        srand(time(nullptr));
+    	char memCorrupt[sizeof(MemoryFooter)];
+        for (char &corrupt : memCorrupt)
+        {
+            corrupt = static_cast<char>(rand() % 255);
+        }
+        memcpy(MemoryHeader::Last, memCorrupt, sizeof(MemoryFooter));
+    }
+    else if (key == 'F')
+    {
+	    //Extra Test
+        if (!MemoryHeader::Last)
+            return;
+
+        srand(time(nullptr));
+        char memCorrupt[sizeof(MemoryFooter::OverflowTest)];
+        for (char& corrupt : memCorrupt)
+        {
+            corrupt = static_cast<char>(rand() % 255);
+        }
+        memcpy(MemoryHeader::Last, memCorrupt, sizeof(MemoryFooter::OverflowTest));
+    }
+    else if (key == 'h')
+    {
+        if (!MemoryHeader::Last)
+            return;
+
+        srand(time(nullptr));
+        char memCorrupt[sizeof(MemoryHeader)];
+        for (char& corrupt : memCorrupt)
+        {
+            corrupt = static_cast<char>(rand() % 255);
+        }
+        memcpy(MemoryHeader::Last, memCorrupt, sizeof(MemoryHeader));
+    }
+    else if (key == 'H')
+    {
+        //Extra Test
+        if (!MemoryHeader::Last)
+            return;
+
+        srand(time(nullptr));
+        char memCorrupt[sizeof(MemoryHeader::UnderflowTest)];
+        for (char& corrupt : memCorrupt)
+        {
+            corrupt = static_cast<char>(rand() % 255);
+        }
+        memcpy(MemoryHeader::Last->Header, memCorrupt, sizeof(MemoryHeader::UnderflowTest));
+    }
     else if (key == 'w')
     {
         HeapChecker();
+    }
+    else if (key == 'r')
+    {
+        DeleteColliderOfType<Box>();
+    }
+    else if (key == 'a')
+    {
+        CreateObjectOfType<Box>();
+    }
+    else if (key == 'R')
+    {
+        DeleteColliderOfType<Sphere>();
+    }
+    else if (key == 'A')
+    {
+        CreateObjectOfType<Sphere>();
     }
 }
 
