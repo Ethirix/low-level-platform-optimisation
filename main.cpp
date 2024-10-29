@@ -14,6 +14,7 @@
 #include "Box.h"
 #include "MemoryFooter.h"
 #include "MemoryHeader.h"
+#include "MemoryPoolManager.h"
 #include "MemoryTracker.h"
 #include "Sphere.h"
 
@@ -85,11 +86,13 @@ void CreateObjectOfType() requires std::derived_from<T, ColliderObject> && !std:
 
 void InitScene(int boxCount, int sphereCount)
 {
-    for (int i = 0; i < boxCount; ++i) {
+    for (int i = 0; i < boxCount; ++i) 
+    {
         CreateObjectOfType<Box>();
     }
 
-    for (int i = 0; i < sphereCount; ++i) {
+    for (int i = 0; i < sphereCount; ++i) 
+    {
         CreateObjectOfType<Sphere>();
     }
 }
