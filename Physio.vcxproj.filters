@@ -36,6 +36,8 @@
     <ClInclude Include="MemoryTracker.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="MemoryFooter.h" />
+    <ClInclude Include="MemoryHeader.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
