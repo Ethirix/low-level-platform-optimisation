@@ -8,4 +8,5 @@ struct MemoryFooter
 
 	MemoryHeader* Header = nullptr;
 	MemoryHeader* Next = nullptr;
+	MemoryHeader* GlobalNext = nullptr;
 };

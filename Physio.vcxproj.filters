@@ -41,6 +41,9 @@
     <ClInclude Include="MemoryPoolManager.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="MemoryPool.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">

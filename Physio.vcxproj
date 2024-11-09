@@ -188,6 +188,7 @@
     <ClInclude Include="globals.h" />
     <ClInclude Include="MemoryFooter.h" />
     <ClInclude Include="MemoryHeader.h" />
+    <ClInclude Include="MemoryPool.h" />
     <ClInclude Include="MemoryPoolManager.h" />
     <ClInclude Include="MemoryTracker.h" />
     <ClInclude Include="Overloads.h" />

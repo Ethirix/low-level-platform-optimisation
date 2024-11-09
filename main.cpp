@@ -296,7 +296,7 @@ void Mouse(int button, int state, int x, int y)
 void HeapChecker()
 {
     std::cout << "Heap Walk Started\n";
-    MemoryFooter* currentNode = MemoryHeader::Last;
+    MemoryFooter* currentNode = MemoryTracker::LastTracked;
     unsigned i = 0;
 
 
@@ -332,7 +332,7 @@ void HeapChecker()
         std::cout << "    Size: " << currentNode->Header->Size << " bytes\n";
         std::cout << "End of Memory Block " << i << '\n';
 
-    	currentNode = currentNode->Header->Previous;
+    	currentNode = currentNode->Header->GlobalPrevious;
     }
 
 	std::cout << "Heap Walk Successful\n\n";
@@ -388,7 +388,7 @@ void Keyboard(unsigned char key, int x, int y)
     }
     else if (key == 'f')
     {
-        if (!MemoryHeader::Last)
+        if (!MemoryTracker::LastTracked)
             return;
 
         srand(time(nullptr));
@@ -397,12 +397,12 @@ void Keyboard(unsigned char key, int x, int y)
         {
             corrupt = static_cast<char>(rand() % 255);
         }
-        memcpy(MemoryHeader::Last, memCorrupt, sizeof(MemoryFooter));
+        memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryFooter));
     }
     else if (key == 'F')
     {
 	    //Extra Test
-        if (!MemoryHeader::Last)
+        if (!MemoryTracker::LastTracked)
             return;
 
         srand(time(nullptr));
@@ -411,11 +411,11 @@ void Keyboard(unsigned char key, int x, int y)
         {
             corrupt = static_cast<char>(rand() % 255);
         }
-        memcpy(MemoryHeader::Last, memCorrupt, sizeof(MemoryFooter::OverflowTest));
+        memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryFooter::OverflowTest));
     }
     else if (key == 'h')
     {
-        if (!MemoryHeader::Last)
+        if (!MemoryTracker::LastTracked)
             return;
 
         srand(time(nullptr));
@@ -424,12 +424,12 @@ void Keyboard(unsigned char key, int x, int y)
         {
             corrupt = static_cast<char>(rand() % 255);
         }
-        memcpy(MemoryHeader::Last, memCorrupt, sizeof(MemoryHeader));
+        memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryHeader));
     }
     else if (key == 'H')
     {
         //Extra Test
-        if (!MemoryHeader::Last)
+        if (!MemoryTracker::LastTracked)
             return;
 
         srand(time(nullptr));
@@ -438,7 +438,7 @@ void Keyboard(unsigned char key, int x, int y)
         {
             corrupt = static_cast<char>(rand() % 255);
         }
-        memcpy(MemoryHeader::Last->Header, memCorrupt, sizeof(MemoryHeader::UnderflowTest));
+        memcpy(MemoryTracker::LastTracked->Header, memCorrupt, sizeof(MemoryHeader::UnderflowTest));
     }
     else if (key == 'w')
     {

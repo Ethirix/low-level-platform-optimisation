@@ -6,9 +6,9 @@ struct MemoryHeader
 {
 	unsigned UnderflowTest = UNDERFLOW_TEST;
 	size_t Size;
+	unsigned Offset;
 
 	MemoryFooter* Footer = nullptr;
 	MemoryFooter* Previous = nullptr;
-
-	static inline MemoryFooter* Last = nullptr;
+	MemoryFooter* GlobalPrevious = nullptr;
 };

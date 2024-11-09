@@ -2,68 +2,69 @@
 
 #include <iostream>
 
-#include "globals.h"
-#include "MemoryFooter.h"
-#include "MemoryHeader.h"
-#include "MemoryTracker.h"
+#include "MemoryPoolManager.h"
 
 void* operator new(const size_t size)
 {
-	const size_t wrappedSize = sizeof(MemoryHeader) + size + sizeof(MemoryFooter);
+	return MemoryPoolManager::Allocate(size);
 
-	MemoryTracker::Get().AddAllocation(wrappedSize);
-	char* pMemory = (char*)malloc(wrappedSize);
+	//const size_t wrappedSize = sizeof(MemoryHeader) + size + sizeof(MemoryFooter);
 
-	MemoryHeader* header = (MemoryHeader*)pMemory;
-	header->UnderflowTest = UNDERFLOW_TEST;
-	header->Size = wrappedSize;
-	header->Previous = MemoryHeader::Last;
+	//MemoryTracker::Get().AddAllocation(wrappedSize);
+	//char* pMemory = (char*)malloc(wrappedSize);
 
-	MemoryFooter* footer = (MemoryFooter*)(pMemory + sizeof(MemoryHeader) + size);
-	footer->OverflowTest = OVERFLOW_TEST;
-	footer->Header = header;
-	footer->Next = nullptr;
-	header->Footer = footer;
+	//MemoryHeader* header = (MemoryHeader*)pMemory;
+	//header->UnderflowTest = UNDERFLOW_TEST;
+	//header->Size = wrappedSize;
+	//header->Previous = MemoryHeader::Last;
 
-	if (MemoryHeader::Last)
-		MemoryHeader::Last->Next = header;
+	//MemoryFooter* footer = (MemoryFooter*)(pMemory + sizeof(MemoryHeader) + size);
+	//footer->OverflowTest = OVERFLOW_TEST;
+	//footer->Header = header;
+	//footer->Next = nullptr;
+	//header->Footer = footer;
 
-	MemoryHeader::Last = footer;
+	//if (MemoryHeader::Last)
+	//	MemoryHeader::Last->Next = header;
 
-	void* pStartMemoryBlock = pMemory + sizeof(MemoryHeader);
-	return pStartMemoryBlock;
+	//MemoryHeader::Last = footer;
+
+	//void* pStartMemoryBlock = pMemory + sizeof(MemoryHeader);
+	//return pStartMemoryBlock;
 }
 
 void operator delete(void* pMemory)
 {
-	MemoryHeader* header = (MemoryHeader*)((char*)pMemory - sizeof(MemoryHeader));
+	MemoryPoolManager::Free(pMemory);
 
-	//What should happen if the header does get overwritten as the size is lost.
-	if (header->UnderflowTest != UNDERFLOW_TEST)
-	{
-		std::cout << "Err: Header Overwritten!" << '\n';
-		//This? (rejig headers and footers as well)
-		free(header);
-		return;
-	}
+	//MemoryHeader* header = (MemoryHeader*)((char*)pMemory - sizeof(MemoryHeader));
 
-	MemoryTracker::Get().RemoveAllocation(header->Size);
+	////What should happen if the header does get overwritten as the size is lost.
+	//if (header->UnderflowTest != UNDERFLOW_TEST)
+	//{
+	//	std::cout << "Err: Header Overwritten!" << '\n';
+	//	//This? (rejig headers and footers as well)
+	//	free(header);
+	//	return;
+	//}
 
-	MemoryFooter* footer = header->Footer;
-	
-	if (footer->OverflowTest != OVERFLOW_TEST)
-		std::cout << "Err: Footer Overwritten!" << '\n';
+	//MemoryTracker::Get().RemoveAllocation(header->Size);
 
-	if (footer->Next)
-	{
-		header->Previous->Next = footer->Next;
-		footer->Next->Previous = header->Previous;
-	}
-	else
-	{
-		MemoryHeader::Last = header->Previous;
-		header->Previous->Next = nullptr;
-	}
-	
-	free(header);
+	//MemoryFooter* footer = header->Footer;
+	//
+	//if (footer->OverflowTest != OVERFLOW_TEST)
+	//	std::cout << "Err: Footer Overwritten!" << '\n';
+
+	//if (footer->Next)
+	//{
+	//	header->Previous->Next = footer->Next;
+	//	footer->Next->Previous = header->Previous;
+	//}
+	//else
+	//{
+	//	MemoryTracker::LastTracked = header->Previous;
+	//	header->Previous->Next = nullptr;
+	//}
+	//
+	//free(header);
 }
