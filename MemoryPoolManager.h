@@ -1,65 +1,12 @@
 #pragma once
+#include <assert.h>
 #include <cstdlib>
 
+#include "globals.h"
+#include "MemoryFooter.h"
+#include "MemoryHeader.h"
 #include "MemoryPool.h"
 #include "MemoryTracker.h"
-
-/*
-	const size_t wrappedSize = sizeof(MemoryHeader) + size + sizeof(MemoryFooter);
-
-	MemoryTracker::Get().AddAllocation(wrappedSize);
-	char* pMemory = (char*)malloc(wrappedSize);
-
-	MemoryHeader* header = (MemoryHeader*)pMemory;
-	header->UnderflowTest = UNDERFLOW_TEST;
-	header->Size = wrappedSize;
-	header->Previous = MemoryHeader::Last;
-
-	MemoryFooter* footer = (MemoryFooter*)(pMemory + sizeof(MemoryHeader) + size);
-	footer->OverflowTest = OVERFLOW_TEST;
-	footer->Header = header;
-	footer->Next = nullptr;
-	header->Footer = footer;
-
-	if (MemoryHeader::Last)
-		MemoryHeader::Last->Next = header;
-
-	MemoryHeader::Last = footer;
-
-	void* pStartMemoryBlock = pMemory + sizeof(MemoryHeader);
-	return pStartMemoryBlock;
-
-	MemoryHeader* header = (MemoryHeader*)((char*)pMemory - sizeof(MemoryHeader));
-
-	//What should happen if the header does get overwritten as the size is lost.
-	if (header->UnderflowTest != UNDERFLOW_TEST)
-	{
-		std::cout << "Err: Header Overwritten!" << '\n';
-		//This? (rejig headers and footers as well)
-		free(header);
-		return;
-	}
-
-	MemoryTracker::Get().RemoveAllocation(header->Size);
-
-	MemoryFooter* footer = header->Footer;
-	
-	if (footer->OverflowTest != OVERFLOW_TEST)
-		std::cout << "Err: Footer Overwritten!" << '\n';
-
-	if (footer->Next)
-	{
-		header->Previous->Next = footer->Next;
-		footer->Next->Previous = header->Previous;
-	}
-	else
-	{
-		MemoryTracker::LastTracked = header->Previous;
-		header->Previous->Next = nullptr;
-	}
-	
-	free(header);
-*/
 
 class MemoryPoolManager
 {
@@ -80,27 +27,25 @@ public:
 		const size_t wrappedSize = sizeof(MemoryHeader) + size + sizeof(MemoryFooter);
 		MemoryFooter* lastAlloc = _pool.LastAllocation;
 		char* addressToAllocateFrom = nullptr;
+		bool ranMalloc = false;
 
 		if (!lastAlloc)
 		{
+			//Allocates immediately at start of pool if empty.
 			addressToAllocateFrom = _pool.Pool;
 		}
-		else if (lastAlloc 
-			&& _pool.Pool + _pool.Size 
-			- (_pool.Pool + lastAlloc->Header->Offset + lastAlloc->Header->Size) >= static_cast<int>(wrappedSize))
+
+		if (!addressToAllocateFrom)
 		{
-			addressToAllocateFrom = _pool.Pool + lastAlloc->Header->Offset + lastAlloc->Header->Size;
-		}
-		else
-		{
+			//Attempts to backtrack pool to find space - doing this first as to optimize slack space
 			lastAlloc = lastAlloc->Header->Previous;
 			while (lastAlloc)
 			{
-				 if ((_pool.Pool + lastAlloc->Next->Offset + lastAlloc->Next->Size) 
-					 - (_pool.Pool + lastAlloc->Header->Offset + lastAlloc->Header->Size) >= static_cast<int>(wrappedSize))
-				 {
-					 addressToAllocateFrom = _pool.Pool + lastAlloc->Header->Offset + lastAlloc->Header->Size;
-				 }
+				if (MemoryHeader* header = lastAlloc->Header;
+					lastAlloc->Next->Offset - (header->Offset + header->Size)>= wrappedSize)
+				{
+					addressToAllocateFrom = _pool.Pool + header->Offset + header->Size;
+				}
 
 				lastAlloc = lastAlloc->Header->Previous;
 			}
@@ -108,40 +53,59 @@ public:
 
 		if (!addressToAllocateFrom)
 		{
-			return GenericAllocation(size);
+			lastAlloc = _pool.LastAllocation;
+			if (MemoryHeader* header = lastAlloc->Header;
+			lastAlloc && _pool.Pool + _pool.Size 
+				- (_pool.Pool + header->Offset + header->Size) >= static_cast<int>(wrappedSize))
+			{
+				//Allocates at top of pool
+				addressToAllocateFrom = _pool.Pool + header->Offset + header->Size;
+			}
+		}
+
+		if (!addressToAllocateFrom)
+		{
+			addressToAllocateFrom = static_cast<char*>(malloc(wrappedSize));
+			ranMalloc = true;
 		}
 
 		MemoryTracker::Get().AddAllocation(wrappedSize);
 
 		MemoryHeader* header = reinterpret_cast<MemoryHeader*>(addressToAllocateFrom);
 		MemoryFooter* footer = reinterpret_cast<MemoryFooter*>(addressToAllocateFrom + sizeof(MemoryHeader) + size);
+		assert(header);
+		assert(footer);
+
 		header->UnderflowTest = UNDERFLOW_TEST;
 		header->Size = wrappedSize;
 		header->Offset = lastAlloc ? lastAlloc->Header->Offset + lastAlloc->Header->Size : 0;
 		header->GlobalPrevious = MemoryTracker::LastTracked;
+		header->Previous = nullptr;
 		header->Footer = footer;
-
+		
 		footer->OverflowTest = OVERFLOW_TEST;
 		footer->Header = header;
 		footer->GlobalNext = nullptr;
+		footer->Next = nullptr;
 
 		//Pool Specific Insertion
-		header->Previous = lastAlloc;
-		footer->Next = lastAlloc ? lastAlloc->Next : nullptr;
-		if (lastAlloc)
-			lastAlloc->Next = header;
-		if (footer->Next)
-			footer->Next->Previous = footer;
-			
+		if (!ranMalloc)
+		{
+			header->Previous = lastAlloc;
+			footer->Next = lastAlloc ? lastAlloc->Next : nullptr;
+			if (lastAlloc)
+				lastAlloc->Next = header;
+			if (footer->Next)
+				footer->Next->Previous = footer;
+			if (_pool.LastAllocation)
+				_pool.LastAllocation->Next = header;
+			_pool.LastAllocation = footer;
+		}
 
 		if (MemoryTracker::LastTracked)
 			MemoryTracker::LastTracked->GlobalNext = header;
 
-		if (_pool.LastAllocation)
-			_pool.LastAllocation->Next = header;
-
 		MemoryTracker::LastTracked = footer;
-		_pool.LastAllocation = footer;
 
 		void* pStartMemoryBlock = addressToAllocateFrom + sizeof(MemoryHeader);
 		return pStartMemoryBlock;
@@ -149,17 +113,48 @@ public:
 
 	static void Free(void* memoryBlock)
 	{
-		//TODO: Free
+		MemoryHeader* header = reinterpret_cast<MemoryHeader*>(static_cast<char*>(memoryBlock) - sizeof(MemoryHeader));
+		MemoryFooter* footer = header->Footer;
+
+		MemoryTracker::Get().RemoveAllocation(header->Size);
+
+		//What should happen if the header does get overwritten as the size is lost.
+		if (header->UnderflowTest != UNDERFLOW_TEST)
+			std::cout << "Err: Header Overwritten!" << '\n';
+
+		if (footer->OverflowTest != OVERFLOW_TEST)
+			std::cout << "Err: Footer Overwritten!" << '\n';
+
+		if (footer->Next)
+		{
+			header->Previous->Next = footer->Next;
+			footer->Next->Previous = header->Previous;
+		}
+		else if (header->Previous)
+		{
+			_pool.LastAllocation = header->Previous;
+			header->Previous->Next = nullptr;
+		}
+
+		if (footer->GlobalNext)
+		{
+			header->GlobalPrevious->GlobalNext = footer->GlobalNext;
+			footer->GlobalNext->GlobalPrevious = header->GlobalPrevious;
+		}
+		else
+		{
+			MemoryTracker::LastTracked = header->GlobalPrevious;
+			header->GlobalPrevious->GlobalNext = nullptr;
+		}
+
+		if (!footer->Next && !header->Previous)
+		{
+			// Both being false implies that the current memory alloc was not allocated to a pool
+			free(header);
+		}
 	}
 
 private:
-	static void* GenericAllocation(size_t size)
-	{
-		//TODO: Generic Allocation
-
-		return nullptr;
-	}
-
 	static inline MemoryPool _pool;
 	static inline unsigned _poolCount;
 	static inline bool _poolInitialised = false;

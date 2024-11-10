@@ -43,7 +43,7 @@ using namespace std::chrono;
 std::list<ColliderObject*> Colliders;
 
 template <typename T>
-void DeleteColliderOfType() requires std::derived_from<T, ColliderObject> && !std::is_same_v<T, ColliderObject>
+void DeleteColliderOfType() requires std::derived_from<T, ColliderObject> && (!std::is_same_v<T, ColliderObject>)
 {
     if (Colliders.empty())
         return;
@@ -61,7 +61,7 @@ void DeleteColliderOfType() requires std::derived_from<T, ColliderObject> && !st
 }
 
 template <typename T>
-void CreateObjectOfType() requires std::derived_from<T, ColliderObject> && !std::is_same_v<T, ColliderObject>
+void CreateObjectOfType() requires std::derived_from<T, ColliderObject> && (!std::is_same_v<T, ColliderObject>)
 {
     T* obj = new T();
 
@@ -299,6 +299,7 @@ void HeapChecker()
     MemoryFooter* currentNode = MemoryTracker::LastTracked;
     unsigned i = 0;
 
+    //TODO: Update Heap Checker to include Memory Pool data
 
     while(currentNode)
     {
