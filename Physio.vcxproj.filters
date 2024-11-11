@@ -5,7 +5,7 @@
     <ClCompile Include="ColliderObject.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Sphere.cpp" />
-    <ClCompile Include="Vec3.cpp" />
+    <ClCompile Include="Vector3.cpp" />
     <ClCompile Include="Overloads.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -27,7 +27,7 @@
     <ClInclude Include="TypedMemoryTracker.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Vec3.h">
+    <ClInclude Include="Vector3.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="ColliderObject.h">

@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "globals.h"
-#include "Vec3.h"
+#include "Vector3.h"
 #include "ColliderObject.h"
 #include "Box.h"
 #include "MemoryFooter.h"
@@ -98,7 +98,7 @@ void InitScene(int boxCount, int sphereCount)
 }
 
 // a ray which is used to tap (by default, remove) a box - see the 'mouse' function for how this is used.
-bool RayBoxIntersection(const Vec3& rayOrigin, const Vec3& rayDirection, const ColliderObject* box)
+bool RayBoxIntersection(const Vector3& rayOrigin, const Vector3& rayDirection, const ColliderObject* box)
 {
     float tMin = (box->Position.X - box->Size.X / 2.0f - rayOrigin.X) / rayDirection.X;
     float tMax = (box->Position.X + box->Size.X / 2.0f - rayOrigin.X) / rayDirection.X;
@@ -131,7 +131,7 @@ bool RayBoxIntersection(const Vec3& rayOrigin, const Vec3& rayDirection, const C
 }
 
 // used in the 'mouse' tap function to convert a screen point to a point in the world
-Vec3 ScreenToWorld(int x, int y)
+Vector3 ScreenToWorld(int x, int y)
 {
     GLint viewport[4];
     GLdouble modelView[16];
@@ -149,7 +149,7 @@ Vec3 ScreenToWorld(int x, int y)
 
     gluUnProject(winX, winY, winZ, modelView, projection, viewport, &posX, &posY, &posZ);
 
-    return Vec3((float)posX, (float)posY, (float)posZ);
+    return {(float)posX, (float)posY, (float)posZ};
 }
 
 // update the physics: gravity, collision test, collision resolution
@@ -170,7 +170,7 @@ void UpdatePhysics(const float deltaTime)
 }
 
 // draw the sides of the containing area
-void DrawQuad(const Vec3& v1, const Vec3& v2, const Vec3& v3, const Vec3& v4)
+void DrawQuad(const Vector3& v1, const Vector3& v2, const Vector3& v3, const Vector3& v4)
 {
     glBegin(GL_QUADS);
     glVertex3f(v1.X, v1.Y, v1.Z);
@@ -191,27 +191,27 @@ void DrawScene()
 
     // Draw the left side wall
     glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vec3 leftSideWallV1(MIN_X, 0.0f, MAX_Z);
-    Vec3 leftSideWallV2(MIN_X, 50.0f, MAX_Z);
-    Vec3 leftSideWallV3(MIN_X, 50.0f, MIN_Z);
-    Vec3 leftSideWallV4(MIN_X, 0.0f, MIN_Z);
+    Vector3 leftSideWallV1(MIN_X, 0.0f, MAX_Z);
+    Vector3 leftSideWallV2(MIN_X, 50.0f, MAX_Z);
+    Vector3 leftSideWallV3(MIN_X, 50.0f, MIN_Z);
+    Vector3 leftSideWallV4(MIN_X, 0.0f, MIN_Z);
     DrawQuad(leftSideWallV1, leftSideWallV2, leftSideWallV3, leftSideWallV4);
 
     // Draw the right side wall
     glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vec3 rightSideWallV1(MAX_X, 0.0f, MAX_Z);
-    Vec3 rightSideWallV2(MAX_X, 50.0f, MAX_Z);
-    Vec3 rightSideWallV3(MAX_X, 50.0f, MIN_Z);
-    Vec3 rightSideWallV4(MAX_X, 0.0f, MIN_Z);
+    Vector3 rightSideWallV1(MAX_X, 0.0f, MAX_Z);
+    Vector3 rightSideWallV2(MAX_X, 50.0f, MAX_Z);
+    Vector3 rightSideWallV3(MAX_X, 50.0f, MIN_Z);
+    Vector3 rightSideWallV4(MAX_X, 0.0f, MIN_Z);
     DrawQuad(rightSideWallV1, rightSideWallV2, rightSideWallV3, rightSideWallV4);
 
 
     // Draw the back wall
     glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vec3 backWallV1(MIN_X, 0.0f, MIN_Z);
-    Vec3 backWallV2(MIN_X, 50.0f, MIN_Z);
-    Vec3 backWallV3(MAX_X, 50.0f, MIN_Z);
-    Vec3 backWallV4(MAX_X, 0.0f, MIN_Z);
+    Vector3 backWallV1(MIN_X, 0.0f, MIN_Z);
+    Vector3 backWallV2(MIN_X, 50.0f, MIN_Z);
+    Vector3 backWallV3(MAX_X, 50.0f, MIN_Z);
+    Vector3 backWallV4(MAX_X, 0.0f, MIN_Z);
     DrawQuad(backWallV1, backWallV2, backWallV3, backWallV4);
 
     for (ColliderObject* box : Colliders) {
@@ -256,14 +256,14 @@ void Mouse(int button, int state, int x, int y)
 {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         // Get the camera position and direction
-        Vec3 cameraPosition(LOOKAT_X, LOOKAT_Y, LOOKAT_Z); // Replace with your actual camera position
-        Vec3 cameraDirection(LOOKDIR_X, LOOKDIR_Y, LOOKDIR_Z); // Replace with your actual camera direction
+        Vector3 cameraPosition(LOOKAT_X, LOOKAT_Y, LOOKAT_Z); // Replace with your actual camera position
+        Vector3 cameraDirection(LOOKDIR_X, LOOKDIR_Y, LOOKDIR_Z); // Replace with your actual camera direction
 
         // Get the world coordinates of the clicked point
-        Vec3 clickedWorldPos = ScreenToWorld(x, y);
+        Vector3 clickedWorldPos = ScreenToWorld(x, y);
 
         // Calculate the ray direction from the camera position to the clicked point
-        Vec3 rayDirection = clickedWorldPos - cameraPosition;
+        Vector3 rayDirection = clickedWorldPos - cameraPosition;
         rayDirection.Normalise();
 
         // Perform a ray-box intersection test and remove the clicked box
@@ -274,7 +274,7 @@ void Mouse(int button, int state, int x, int y)
         for (ColliderObject* box : Colliders) {
             if (RayBoxIntersection(cameraPosition, rayDirection, box)) {
                 // Calculate the distance between the camera and the intersected box
-                Vec3 diff = box->Position - cameraPosition;
+                Vector3 diff = box->Position - cameraPosition;
 
                 // Update the clicked box index if this box is closer to the camera
                 if (float distance = diff.Length(); distance < minIntersectionDistance) {
