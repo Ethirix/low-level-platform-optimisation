@@ -76,17 +76,16 @@ public:
 		assert(header);
 		assert(footer);
 
-		header->UnderflowTest = UNDERFLOW_TEST;
+		//Placement new operator, allowing construction of already-allocated objects.
+		new(header) MemoryHeader();
+		new(footer) MemoryFooter();
+
 		header->Size = wrappedSize;
 		header->Offset = lastAlloc ? lastAlloc->Header->Offset + lastAlloc->Header->Size : 0;
 		header->GlobalPrevious = MemoryTracker::LastTracked;
-		header->Previous = nullptr;
 		header->Footer = footer;
 		
-		footer->OverflowTest = OVERFLOW_TEST;
 		footer->Header = header;
-		footer->GlobalNext = nullptr;
-		footer->Next = nullptr;
 
 		//Pool Specific Insertion
 		if (!ranMalloc)

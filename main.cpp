@@ -467,7 +467,8 @@ void Keyboard(unsigned char key, int x, int y)
 int main(int argc, char** argv)
 {
     srand(static_cast<unsigned>(time(nullptr))); // Seed random number generator
-    MemoryTracker::Get().RemoveAllocation(MemoryTracker::Get().GetAllocation()); // Removed random byte allocation before main even runs
+    //Leaving this commented out for now as it *is* still memory allocated - confident this is stdlib allocations.
+	//MemoryTracker::Get().RemoveAllocation(MemoryTracker::Get().GetAllocation()); // Removed random byte allocation before main even runs
 	glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(RESOLUTION_X, RESOLUTION_Y);
