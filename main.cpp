@@ -30,13 +30,13 @@ using namespace std::chrono;
 
 // This is where the camera is, where it is looking and the bounds of the containing box. You shouldn't need to alter these
 
-#define LOOKAT_X 10
-#define LOOKAT_Y 10
-#define LOOKAT_Z 50
+#define LOOK_AT_X 10
+#define LOOK_AT_Y 10
+#define LOOK_AT_Z 50
 
-#define LOOKDIR_X 10
-#define LOOKDIR_Y 0
-#define LOOKDIR_Z 0
+#define LOOK_DIR_X 10
+#define LOOK_DIR_Y 0
+#define LOOK_DIR_Z 0
 
 #define DEBUG_INT_ALLOC_SIZE 64
 
@@ -219,7 +219,7 @@ void Display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
-    gluLookAt(LOOKAT_X, LOOKAT_Y, LOOKAT_Z, LOOKDIR_X, LOOKDIR_Y, LOOKDIR_Z, 0, 1, 0);
+    gluLookAt(LOOK_AT_X, LOOK_AT_Y, LOOK_AT_Z, LOOK_DIR_X, LOOK_DIR_Y, LOOK_DIR_Z, 0, 1, 0);
 
     DrawScene();
 
@@ -251,8 +251,8 @@ void Mouse(int button, int state, int x, int y)
 {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         // Get the camera position and direction
-        Vector3 cameraPosition(LOOKAT_X, LOOKAT_Y, LOOKAT_Z); // Replace with your actual camera position
-        Vector3 cameraDirection(LOOKDIR_X, LOOKDIR_Y, LOOKDIR_Z); // Replace with your actual camera direction
+        Vec3 cameraPosition(LOOK_AT_X, LOOK_AT_Y, LOOK_AT_Z); // Replace with your actual camera position
+        Vec3 cameraDirection(LOOK_DIR_X, LOOK_DIR_Y, LOOK_DIR_Z); // Replace with your actual camera direction
 
         // Get the world coordinates of the clicked point
         Vector3 clickedWorldPos = ScreenToWorld(x, y);
@@ -482,7 +482,7 @@ int main(int argc, char** argv)
     glutDisplayFunc(Display);
     glutIdleFunc(Idle);
 
-    // it will stick here until the program ends. 
+    // It will stick here until the program ends. 
     glutMainLoop();
     return 0;
 }
