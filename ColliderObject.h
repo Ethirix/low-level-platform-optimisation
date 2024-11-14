@@ -3,7 +3,7 @@
 #include "Vector3.h"
 #include <list>
 #include <GL/glut.h>
-#include "globals.h"
+#include "Globals.h"
 
 class ColliderObject
 {

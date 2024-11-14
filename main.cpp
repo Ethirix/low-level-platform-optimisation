@@ -1,3 +1,4 @@
+// ReSharper disable CppClangTidyMiscUseInternalLinkage
 #include <algorithm>
 #include <GL/glut.h>
 #include <iostream>
@@ -6,11 +7,12 @@
 #include <chrono>
 #include <cstdlib>
 #include <ctime>
+#include <thread>
 #include <vector>
 
 #include "Box.h"
 #include "ColliderObject.h"
-#include "globals.h"
+#include "Globals.h"
 #include "MemoryFooter.h"
 #include "MemoryHeader.h"
 #include "MemoryPoolManager.h"
@@ -86,15 +88,24 @@ void CreateObjectOfType() requires std::derived_from<T, ColliderObject> && (!std
 
 void InitScene(int boxCount, int sphereCount)
 {
-    for (int i = 0; i < boxCount; ++i) 
+	std::thread box([](int count) -> void
     {
-        CreateObjectOfType<Box>();
-    }
+	    for (int i = 0; i < count; ++i) 
+		{
+			CreateObjectOfType<Box>();
+		}
+    }, boxCount);
 
-    for (int i = 0; i < sphereCount; ++i) 
-    {
-        CreateObjectOfType<Sphere>();
-    }
+	std::thread sphere([](int count) -> void
+	{
+	    for (int i = 0; i < count; ++i) 
+	    {
+	        CreateObjectOfType<Sphere>();
+	    }
+	}, sphereCount);
+
+    box.join();
+    sphere.join();
 }
 
 // a ray which is used to tap (by default, remove) a box - see the 'mouse' function for how this is used.
@@ -240,8 +251,8 @@ void Idle()
     const duration<float> frameTime = last - old;
     float deltaTime = frameTime.count();
 
-    if (deltaTime > 1)
-        return;
+    //if (deltaTime > 1)
+    //    return;
 
     UpdatePhysics(deltaTime);
 
@@ -254,8 +265,8 @@ void Mouse(int button, int state, int x, int y)
 {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         // Get the camera position and direction
-        Vec3 cameraPosition(LOOK_AT_X, LOOK_AT_Y, LOOK_AT_Z); // Replace with your actual camera position
-        Vec3 cameraDirection(LOOK_DIR_X, LOOK_DIR_Y, LOOK_DIR_Z); // Replace with your actual camera direction
+        Vector3 cameraPosition(LOOK_AT_X, LOOK_AT_Y, LOOK_AT_Z); // Replace with your actual camera position
+        Vector3 cameraDirection(LOOK_DIR_X, LOOK_DIR_Y, LOOK_DIR_Z); // Replace with your actual camera direction
 
         // Get the world coordinates of the clicked point
         Vector3 clickedWorldPos = ScreenToWorld(x, y);
@@ -296,8 +307,6 @@ void HeapChecker(const MemoryFooter* startingNode, bool isGlobal = true)
     std::cout << "Heap Walk Started\n\n";
     const MemoryFooter* currentNode = startingNode;
     unsigned i = 0;
-
-    //TODO: Update Heap Checker to include Memory Pool data
 
     while(currentNode)
     {
@@ -465,6 +474,10 @@ int main(int argc, char** argv)
     srand(static_cast<unsigned>(time(nullptr))); // Seed random number generator
     //Leaving this commented out for now as it *is* still memory allocated - confident this is stdlib allocations.
 	//MemoryTracker::Get().RemoveAllocation(MemoryTracker::Get().GetAllocation()); // Removed random byte allocation before main even runs
+
+    //Actively thread the object creation as a large amount of objects can be slow.
+	std::thread initScene(InitScene, NUMBER_OF_BOXES, NUMBER_OF_SPHERES);
+
 	glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(RESOLUTION_X, RESOLUTION_Y);
@@ -481,9 +494,10 @@ int main(int argc, char** argv)
     gluPerspective(45.0, static_cast<double>(RESOLUTION_X) / RESOLUTION_Y, 0.1, 100.0);
     glMatrixMode(GL_MODELVIEW);
 
-    InitScene(NUMBER_OF_BOXES, NUMBER_OF_SPHERES);
     glutDisplayFunc(Display);
     glutIdleFunc(Idle);
+
+    initScene.join();
 
     // It will stick here until the program ends. 
     glutMainLoop();

@@ -1,8 +1,9 @@
 #pragma once
 #include <assert.h>
 #include <cstdlib>
+#include <mutex>
 
-#include "globals.h"
+#include "Globals.h"
 #include "MemoryFooter.h"
 #include "MemoryHeader.h"
 #include "MemoryPool.h"
@@ -13,12 +14,14 @@ class MemoryPoolManager
 public:
 	[[nodiscard]] static void* Allocate(size_t size)
 	{
+		const std::lock_guard lock(_allocMutex);
+
 		if (!_poolInitialised)
 		{
 			_pool = {
-				static_cast<char*>(malloc(POOL_SIZE)),
-				POOL_SIZE,
-				nullptr
+				.Pool = static_cast<char*>(malloc(POOL_SIZE)),
+				.Size = POOL_SIZE,
+				.LastAllocation = nullptr
 			};
 
 			_poolInitialised = true;
@@ -115,6 +118,8 @@ public:
 
 	static void Free(void* memoryBlock)
 	{
+		const std::lock_guard lock(_freeMutex);
+
 		MemoryHeader* header = reinterpret_cast<MemoryHeader*>(static_cast<char*>(memoryBlock) - sizeof(MemoryHeader));
 		MemoryFooter* footer = header->Footer;
 
@@ -175,4 +180,7 @@ private:
 	static inline MemoryPool _pool;
 	static inline unsigned _poolCount;
 	static inline bool _poolInitialised = false;
+
+	static inline std::mutex _allocMutex;
+	static inline std::mutex _freeMutex;
 };
