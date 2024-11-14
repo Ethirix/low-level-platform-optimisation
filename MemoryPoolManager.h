@@ -42,9 +42,10 @@ public:
 			while (lastAlloc)
 			{
 				if (MemoryHeader* header = lastAlloc->Header;
-					lastAlloc->Next->Offset - (header->Offset + header->Size)>= wrappedSize)
+					lastAlloc->Next->Offset - (header->Offset + header->Size) >= wrappedSize)
 				{
 					addressToAllocateFrom = _pool.Pool + header->Offset + header->Size;
+					break;
 				}
 
 				lastAlloc = lastAlloc->Header->Previous;
@@ -55,8 +56,7 @@ public:
 		{
 			lastAlloc = _pool.LastAllocation;
 			if (MemoryHeader* header = lastAlloc->Header;
-			lastAlloc && _pool.Pool + _pool.Size 
-				- (_pool.Pool + header->Offset + header->Size) >= static_cast<int>(wrappedSize))
+				lastAlloc && _pool.Size - (header->Offset + header->Size) >= wrappedSize)
 			{
 				//Allocates at top of pool
 				addressToAllocateFrom = _pool.Pool + header->Offset + header->Size;
@@ -96,9 +96,12 @@ public:
 				lastAlloc->Next = header;
 			if (footer->Next)
 				footer->Next->Previous = footer;
-			if (_pool.LastAllocation)
-				_pool.LastAllocation->Next = header;
-			_pool.LastAllocation = footer;
+			if (!footer->Next)
+			{
+				if (_pool.LastAllocation)
+					_pool.LastAllocation->Next = header;
+				_pool.LastAllocation = footer;
+			}
 		}
 
 		if (MemoryTracker::LastTracked)
@@ -153,6 +156,21 @@ public:
 		}
 	}
 
+	[[nodiscard]] static const MemoryFooter* GetPoolLastAllocation() { return _pool.LastAllocation; }
+
+	[[nodiscard]] static size_t GetPoolAllocatedSize()
+	{
+		MemoryFooter* currentNode = _pool.LastAllocation;
+		size_t size = 0;
+
+		while (currentNode)
+		{
+			size += currentNode->Header->Size;
+			currentNode = currentNode->Header->Previous;
+		}
+
+		return size;
+	}
 private:
 	static inline MemoryPool _pool;
 	static inline unsigned _poolCount;

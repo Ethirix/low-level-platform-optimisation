@@ -68,7 +68,7 @@ public:
         glPopMatrix();
     }
 
-    virtual void DrawMesh() {};
+    virtual void DrawMesh() {}
 
     virtual ~ColliderObject() = default;
 

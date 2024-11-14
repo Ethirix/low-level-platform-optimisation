@@ -1,22 +1,22 @@
-#include <stdlib.h>
+#include <algorithm>
 #include <GL/glut.h>
-#include <list>
 #include <iostream>
+#include <list>
 
+#include <chrono>
 #include <cstdlib>
 #include <ctime>
-#include <chrono>
 #include <vector>
 
-#include "globals.h"
-#include "Vector3.h"
-#include "ColliderObject.h"
 #include "Box.h"
+#include "ColliderObject.h"
+#include "globals.h"
 #include "MemoryFooter.h"
 #include "MemoryHeader.h"
 #include "MemoryPoolManager.h"
 #include "MemoryTracker.h"
 #include "Sphere.h"
+#include "Vector3.h"
 
 
 using namespace std::chrono;
@@ -110,21 +110,18 @@ bool RayBoxIntersection(const Vector3& rayOrigin, const Vector3& rayDirection, c
 
     if (tyMin > tyMax) std::swap(tyMin, tyMax);
 
-    if ((tMin > tyMax) || (tyMin > tMax))
+    if (tMin > tyMax || tyMin > tMax)
         return false;
 
-    if (tyMin > tMin)
-        tMin = tyMin;
-
-    if (tyMax < tMax)
-        tMax = tyMax;
+    tMin = std::max(tyMin, tMin);
+    tMax = std::min(tyMax, tMax);
 
     float tzMin = (box->Position.Z - box->Size.Z / 2.0f - rayOrigin.Z) / rayDirection.Z;
     float tzMax = (box->Position.Z + box->Size.Z / 2.0f - rayOrigin.Z) / rayDirection.Z;
 
     if (tzMin > tzMax) std::swap(tzMin, tzMax);
 
-    if ((tMin > tzMax) || (tzMin > tMax))
+    if (tMin > tzMax || tzMin > tMax)
         return false;
 
     return true;
@@ -155,7 +152,7 @@ Vector3 ScreenToWorld(int x, int y)
 // update the physics: gravity, collision test, collision resolution
 void UpdatePhysics(const float deltaTime)
 {
-    // TODO for the assessment - use a thread for each sub-region
+    // TODO: for the assessment - use a thread for each sub-region
     // for example, assuming we have two regions:
     // from 'colliders' create two separate lists
     // empty each list (from previous frame) and work out which collidable object is in which region, 
@@ -179,8 +176,6 @@ void DrawQuad(const Vector3& v1, const Vector3& v2, const Vector3& v3, const Vec
     glVertex3f(v4.X, v4.Y, v4.Z);
     glEnd();
 }
-
-
 
 // draw the entire scene
 void DrawScene()
@@ -293,47 +288,39 @@ void Mouse(int button, int state, int x, int y)
     }
 }
 
-void HeapChecker()
+void HeapChecker(const MemoryFooter* startingNode, bool isGlobal = true)
 {
-    std::cout << "Heap Walk Started\n";
-    MemoryFooter* currentNode = MemoryTracker::LastTracked;
+    std::cout << "Heap Walk Started\n\n";
+    const MemoryFooter* currentNode = startingNode;
     unsigned i = 0;
 
     //TODO: Update Heap Checker to include Memory Pool data
 
     while(currentNode)
     {
+        MemoryHeader* currentNodeHeader = currentNode->Header;
+
         std::cout << "Start of Memory Block " << ++i << '\n';
-        std::cout << "    Footer Test - ";
         if (currentNode == nullptr || currentNode->OverflowTest != OVERFLOW_TEST)
         {
-	        std::cout << "Err: Overflow Test Failed" << '\n';
+	        std::cout << "    Err: Overflow Test Failed [Footer]" << '\n';
         }
-        else
+        if (currentNodeHeader == nullptr || currentNodeHeader->UnderflowTest != UNDERFLOW_TEST)
         {
-            std::cout << "Success: Overflow Test Passed" << '\n';
+            std::cout << "    Err: Underflow Test Failed [Header]" << '\n';
         }
-        std::cout << "    Header Test - ";
-
-        if (currentNode->Header == nullptr || currentNode->Header->UnderflowTest != UNDERFLOW_TEST)
-        {
-            std::cout << "Err: Underflow Test Failed" << '\n';
-        }
-        else
-        {
-            std::cout << "Success: Underflow Test Passed" << '\n';
-        }
-
-        if (currentNode->Header == nullptr)
+        if (currentNodeHeader == nullptr)
         {
             std::cout << "CRITICAL ERROR: MEMORY HEADER IS NULL | BREAKING HEAP WALK" << '\n';
             return;
         }
 
-        std::cout << "    Size: " << currentNode->Header->Size << " bytes\n";
-        std::cout << "End of Memory Block " << i << '\n';
+        std::cout << "    Address: 0x" << currentNode << '\n';
+        std::cout << "    Size: " << currentNodeHeader->Size << " bytes\n";
+        std::cout << "    Pool Allocated: " << (currentNode->Next || currentNodeHeader->Previous ? "True" : "False") << '\n';
+        std::cout << "End of Memory Block " << i << "\n\n";
 
-    	currentNode = currentNode->Header->GlobalPrevious;
+    	currentNode = isGlobal ? currentNodeHeader->GlobalPrevious : currentNodeHeader->Previous;
     }
 
 	std::cout << "Heap Walk Successful\n\n";
@@ -354,9 +341,11 @@ void Keyboard(unsigned char key, int x, int y)
     }
     else if (key == 'm')
     { 
-        std::cout << "Memory used: " << MemoryTracker::Get().GetAllocation() << '\n';
-        std::cout << "Box Memory used: " << Box::MemoryTracker.GetAllocation() << '\n';
-        std::cout << "Sphere Memory Used: " << Sphere::MemoryTracker.GetAllocation() << '\n';
+        std::cout << "Memory used: " << MemoryTracker::Get().GetAllocation() << "B\n";
+        std::cout << "Pool Memory used: " << MemoryPoolManager::GetPoolAllocatedSize() << "B\n";
+        std::cout << "Pool Memory size: " << POOL_SIZE << "B\n";
+        std::cout << "Box Memory used: " << Box::MemoryTracker.GetAllocation() << "B\n";
+        std::cout << "Sphere Memory Used: " << Sphere::MemoryTracker.GetAllocation() << "B\n";
         std::cout << '\n';
     }
     else if (key == 't')
@@ -422,7 +411,7 @@ void Keyboard(unsigned char key, int x, int y)
         srand(time(nullptr));
         char memCorrupt[sizeof(MemoryHeader)];
         for (char& corrupt : memCorrupt)
-        {
+    {
             corrupt = static_cast<char>(rand() % 255);
         }
         memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryHeader));
@@ -443,7 +432,11 @@ void Keyboard(unsigned char key, int x, int y)
     }
     else if (key == 'w')
     {
-        HeapChecker();
+        HeapChecker(MemoryTracker::LastTracked);
+    }
+    else if (key == 'W')
+    {
+	    HeapChecker(MemoryPoolManager::GetPoolLastAllocation(), false);
     }
     else if (key == 'r')
     {
