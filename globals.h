@@ -1,8 +1,14 @@
 #pragma once
-#define minX -10.0f
-#define maxX 30.0f
-#define minZ -30.0f
-#define maxZ 30.0f
+#define MIN_X (-10.0f)
+#define MAX_X 30.0f
+#define MIN_Z (-30.0f)
+#define MAX_Z 30.0f
+
+#define OVERFLOW_TEST 0xF100D5E7
+#define UNDERFLOW_TEST 0x5E7F100D
+
+//Size in Bytes of Memory Pool
+constexpr size_t POOL_SIZE = 1024;
 
 // gravity - change it and see what happens (usually negative!)
-const float gravity = -19.81f;
+constexpr float GRAVITY = -19.81f;
