@@ -29,6 +29,8 @@ public:
 	MemoryTracker& operator=(MemoryTracker const&) = delete;
 	MemoryTracker& operator=(MemoryTracker&&) = delete;
 
+	static inline MemoryFooter* LastTracked = nullptr;
+
 private:
 	MemoryTracker() = default;
 	~MemoryTracker() = default;

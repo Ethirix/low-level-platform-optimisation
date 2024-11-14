@@ -1,21 +1,22 @@
-#include <stdlib.h>
+#include <algorithm>
 #include <GL/glut.h>
-#include <list>
 #include <iostream>
+#include <list>
 
+#include <chrono>
 #include <cstdlib>
 #include <ctime>
-#include <chrono>
 #include <vector>
 
-#include "globals.h"
-#include "Vec3.h"
-#include "ColliderObject.h"
 #include "Box.h"
+#include "ColliderObject.h"
+#include "globals.h"
 #include "MemoryFooter.h"
 #include "MemoryHeader.h"
+#include "MemoryPoolManager.h"
 #include "MemoryTracker.h"
 #include "Sphere.h"
+#include "Vector3.h"
 
 
 using namespace std::chrono;
@@ -42,7 +43,7 @@ using namespace std::chrono;
 std::list<ColliderObject*> Colliders;
 
 template <typename T>
-void DeleteColliderOfType() requires std::derived_from<T, ColliderObject> && !std::is_same_v<T, ColliderObject>
+void DeleteColliderOfType() requires std::derived_from<T, ColliderObject> && (!std::is_same_v<T, ColliderObject>)
 {
     if (Colliders.empty())
         return;
@@ -60,7 +61,7 @@ void DeleteColliderOfType() requires std::derived_from<T, ColliderObject> && !st
 }
 
 template <typename T>
-void CreateObjectOfType() requires std::derived_from<T, ColliderObject> && !std::is_same_v<T, ColliderObject>
+void CreateObjectOfType() requires std::derived_from<T, ColliderObject> && (!std::is_same_v<T, ColliderObject>)
 {
     T* obj = new T();
 
@@ -85,17 +86,19 @@ void CreateObjectOfType() requires std::derived_from<T, ColliderObject> && !std:
 
 void InitScene(int boxCount, int sphereCount)
 {
-    for (int i = 0; i < boxCount; ++i) {
+    for (int i = 0; i < boxCount; ++i) 
+    {
         CreateObjectOfType<Box>();
     }
 
-    for (int i = 0; i < sphereCount; ++i) {
+    for (int i = 0; i < sphereCount; ++i) 
+    {
         CreateObjectOfType<Sphere>();
     }
 }
 
 // a ray which is used to tap (by default, remove) a box - see the 'mouse' function for how this is used.
-bool RayBoxIntersection(const Vec3& rayOrigin, const Vec3& rayDirection, const ColliderObject* box)
+bool RayBoxIntersection(const Vector3& rayOrigin, const Vector3& rayDirection, const ColliderObject* box)
 {
     float tMin = (box->Position.X - box->Size.X / 2.0f - rayOrigin.X) / rayDirection.X;
     float tMax = (box->Position.X + box->Size.X / 2.0f - rayOrigin.X) / rayDirection.X;
@@ -107,28 +110,25 @@ bool RayBoxIntersection(const Vec3& rayOrigin, const Vec3& rayDirection, const C
 
     if (tyMin > tyMax) std::swap(tyMin, tyMax);
 
-    if ((tMin > tyMax) || (tyMin > tMax))
+    if (tMin > tyMax || tyMin > tMax)
         return false;
 
-    if (tyMin > tMin)
-        tMin = tyMin;
-
-    if (tyMax < tMax)
-        tMax = tyMax;
+    tMin = std::max(tyMin, tMin);
+    tMax = std::min(tyMax, tMax);
 
     float tzMin = (box->Position.Z - box->Size.Z / 2.0f - rayOrigin.Z) / rayDirection.Z;
     float tzMax = (box->Position.Z + box->Size.Z / 2.0f - rayOrigin.Z) / rayDirection.Z;
 
     if (tzMin > tzMax) std::swap(tzMin, tzMax);
 
-    if ((tMin > tzMax) || (tzMin > tMax))
+    if (tMin > tzMax || tzMin > tMax)
         return false;
 
     return true;
 }
 
 // used in the 'mouse' tap function to convert a screen point to a point in the world
-Vec3 ScreenToWorld(int x, int y)
+Vector3 ScreenToWorld(int x, int y)
 {
     GLint viewport[4];
     GLdouble modelView[16];
@@ -146,13 +146,13 @@ Vec3 ScreenToWorld(int x, int y)
 
     gluUnProject(winX, winY, winZ, modelView, projection, viewport, &posX, &posY, &posZ);
 
-    return Vec3((float)posX, (float)posY, (float)posZ);
+    return {(float)posX, (float)posY, (float)posZ};
 }
 
 // update the physics: gravity, collision test, collision resolution
 void UpdatePhysics(const float deltaTime)
 {
-    // TODO for the assessment - use a thread for each sub-region
+    // TODO: for the assessment - use a thread for each sub-region
     // for example, assuming we have two regions:
     // from 'colliders' create two separate lists
     // empty each list (from previous frame) and work out which collidable object is in which region, 
@@ -167,7 +167,7 @@ void UpdatePhysics(const float deltaTime)
 }
 
 // draw the sides of the containing area
-void DrawQuad(const Vec3& v1, const Vec3& v2, const Vec3& v3, const Vec3& v4)
+void DrawQuad(const Vector3& v1, const Vector3& v2, const Vector3& v3, const Vector3& v4)
 {
     glBegin(GL_QUADS);
     glVertex3f(v1.X, v1.Y, v1.Z);
@@ -176,8 +176,6 @@ void DrawQuad(const Vec3& v1, const Vec3& v2, const Vec3& v3, const Vec3& v4)
     glVertex3f(v4.X, v4.Y, v4.Z);
     glEnd();
 }
-
-
 
 // draw the entire scene
 void DrawScene()
@@ -188,27 +186,27 @@ void DrawScene()
 
     // Draw the left side wall
     glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vec3 leftSideWallV1(MIN_X, 0.0f, MAX_Z);
-    Vec3 leftSideWallV2(MIN_X, 50.0f, MAX_Z);
-    Vec3 leftSideWallV3(MIN_X, 50.0f, MIN_Z);
-    Vec3 leftSideWallV4(MIN_X, 0.0f, MIN_Z);
+    Vector3 leftSideWallV1(MIN_X, 0.0f, MAX_Z);
+    Vector3 leftSideWallV2(MIN_X, 50.0f, MAX_Z);
+    Vector3 leftSideWallV3(MIN_X, 50.0f, MIN_Z);
+    Vector3 leftSideWallV4(MIN_X, 0.0f, MIN_Z);
     DrawQuad(leftSideWallV1, leftSideWallV2, leftSideWallV3, leftSideWallV4);
 
     // Draw the right side wall
     glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vec3 rightSideWallV1(MAX_X, 0.0f, MAX_Z);
-    Vec3 rightSideWallV2(MAX_X, 50.0f, MAX_Z);
-    Vec3 rightSideWallV3(MAX_X, 50.0f, MIN_Z);
-    Vec3 rightSideWallV4(MAX_X, 0.0f, MIN_Z);
+    Vector3 rightSideWallV1(MAX_X, 0.0f, MAX_Z);
+    Vector3 rightSideWallV2(MAX_X, 50.0f, MAX_Z);
+    Vector3 rightSideWallV3(MAX_X, 50.0f, MIN_Z);
+    Vector3 rightSideWallV4(MAX_X, 0.0f, MIN_Z);
     DrawQuad(rightSideWallV1, rightSideWallV2, rightSideWallV3, rightSideWallV4);
 
 
     // Draw the back wall
     glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vec3 backWallV1(MIN_X, 0.0f, MIN_Z);
-    Vec3 backWallV2(MIN_X, 50.0f, MIN_Z);
-    Vec3 backWallV3(MAX_X, 50.0f, MIN_Z);
-    Vec3 backWallV4(MAX_X, 0.0f, MIN_Z);
+    Vector3 backWallV1(MIN_X, 0.0f, MIN_Z);
+    Vector3 backWallV2(MIN_X, 50.0f, MIN_Z);
+    Vector3 backWallV3(MAX_X, 50.0f, MIN_Z);
+    Vector3 backWallV4(MAX_X, 0.0f, MIN_Z);
     DrawQuad(backWallV1, backWallV2, backWallV3, backWallV4);
 
     for (ColliderObject* box : Colliders) {
@@ -253,14 +251,14 @@ void Mouse(int button, int state, int x, int y)
 {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         // Get the camera position and direction
-        Vec3 cameraPosition(LOOKAT_X, LOOKAT_Y, LOOKAT_Z); // Replace with your actual camera position
-        Vec3 cameraDirection(LOOKDIR_X, LOOKDIR_Y, LOOKDIR_Z); // Replace with your actual camera direction
+        Vector3 cameraPosition(LOOKAT_X, LOOKAT_Y, LOOKAT_Z); // Replace with your actual camera position
+        Vector3 cameraDirection(LOOKDIR_X, LOOKDIR_Y, LOOKDIR_Z); // Replace with your actual camera direction
 
         // Get the world coordinates of the clicked point
-        Vec3 clickedWorldPos = ScreenToWorld(x, y);
+        Vector3 clickedWorldPos = ScreenToWorld(x, y);
 
         // Calculate the ray direction from the camera position to the clicked point
-        Vec3 rayDirection = clickedWorldPos - cameraPosition;
+        Vector3 rayDirection = clickedWorldPos - cameraPosition;
         rayDirection.Normalise();
 
         // Perform a ray-box intersection test and remove the clicked box
@@ -271,7 +269,7 @@ void Mouse(int button, int state, int x, int y)
         for (ColliderObject* box : Colliders) {
             if (RayBoxIntersection(cameraPosition, rayDirection, box)) {
                 // Calculate the distance between the camera and the intersected box
-                Vec3 diff = box->Position - cameraPosition;
+                Vector3 diff = box->Position - cameraPosition;
 
                 // Update the clicked box index if this box is closer to the camera
                 if (float distance = diff.Length(); distance < minIntersectionDistance) {
@@ -290,46 +288,39 @@ void Mouse(int button, int state, int x, int y)
     }
 }
 
-void HeapChecker()
+void HeapChecker(const MemoryFooter* startingNode, bool isGlobal = true)
 {
-    std::cout << "Heap Walk Started\n";
-    MemoryFooter* currentNode = MemoryHeader::Last;
+    std::cout << "Heap Walk Started\n\n";
+    const MemoryFooter* currentNode = startingNode;
     unsigned i = 0;
 
+    //TODO: Update Heap Checker to include Memory Pool data
 
     while(currentNode)
     {
+        MemoryHeader* currentNodeHeader = currentNode->Header;
+
         std::cout << "Start of Memory Block " << ++i << '\n';
-        std::cout << "    Footer Test - ";
         if (currentNode == nullptr || currentNode->OverflowTest != OVERFLOW_TEST)
         {
-	        std::cout << "Err: Overflow Test Failed" << '\n';
+	        std::cout << "    Err: Overflow Test Failed [Footer]" << '\n';
         }
-        else
+        if (currentNodeHeader == nullptr || currentNodeHeader->UnderflowTest != UNDERFLOW_TEST)
         {
-            std::cout << "Success: Overflow Test Passed" << '\n';
+            std::cout << "    Err: Underflow Test Failed [Header]" << '\n';
         }
-        std::cout << "    Header Test - ";
-
-        if (currentNode->Header == nullptr || currentNode->Header->UnderflowTest != UNDERFLOW_TEST)
-        {
-            std::cout << "Err: Underflow Test Failed" << '\n';
-        }
-        else
-        {
-            std::cout << "Success: Underflow Test Passed" << '\n';
-        }
-
-        if (currentNode->Header == nullptr)
+        if (currentNodeHeader == nullptr)
         {
             std::cout << "CRITICAL ERROR: MEMORY HEADER IS NULL | BREAKING HEAP WALK" << '\n';
             return;
         }
 
-        std::cout << "    Size: " << currentNode->Header->Size << " bytes\n";
-        std::cout << "End of Memory Block " << i << '\n';
+        std::cout << "    Address: 0x" << currentNode << '\n';
+        std::cout << "    Size: " << currentNodeHeader->Size << " bytes\n";
+        std::cout << "    Pool Allocated: " << (currentNode->Next || currentNodeHeader->Previous ? "True" : "False") << '\n';
+        std::cout << "End of Memory Block " << i << "\n\n";
 
-    	currentNode = currentNode->Header->Previous;
+    	currentNode = isGlobal ? currentNodeHeader->GlobalPrevious : currentNodeHeader->Previous;
     }
 
 	std::cout << "Heap Walk Successful\n\n";
@@ -350,9 +341,11 @@ void Keyboard(unsigned char key, int x, int y)
     }
     else if (key == 'm')
     { 
-        std::cout << "Memory used: " << MemoryTracker::Get().GetAllocation() << '\n';
-        std::cout << "Box Memory used: " << Box::MemoryTracker.GetAllocation() << '\n';
-        std::cout << "Sphere Memory Used: " << Sphere::MemoryTracker.GetAllocation() << '\n';
+        std::cout << "Memory used: " << MemoryTracker::Get().GetAllocation() << "B\n";
+        std::cout << "Pool Memory used: " << MemoryPoolManager::GetPoolAllocatedSize() << "B\n";
+        std::cout << "Pool Memory size: " << POOL_SIZE << "B\n";
+        std::cout << "Box Memory used: " << Box::MemoryTracker.GetAllocation() << "B\n";
+        std::cout << "Sphere Memory Used: " << Sphere::MemoryTracker.GetAllocation() << "B\n";
         std::cout << '\n';
     }
     else if (key == 't')
@@ -385,7 +378,7 @@ void Keyboard(unsigned char key, int x, int y)
     }
     else if (key == 'f')
     {
-        if (!MemoryHeader::Last)
+        if (!MemoryTracker::LastTracked)
             return;
 
         srand(time(nullptr));
@@ -394,12 +387,12 @@ void Keyboard(unsigned char key, int x, int y)
         {
             corrupt = static_cast<char>(rand() % 255);
         }
-        memcpy(MemoryHeader::Last, memCorrupt, sizeof(MemoryFooter));
+        memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryFooter));
     }
     else if (key == 'F')
     {
 	    //Extra Test
-        if (!MemoryHeader::Last)
+        if (!MemoryTracker::LastTracked)
             return;
 
         srand(time(nullptr));
@@ -408,25 +401,25 @@ void Keyboard(unsigned char key, int x, int y)
         {
             corrupt = static_cast<char>(rand() % 255);
         }
-        memcpy(MemoryHeader::Last, memCorrupt, sizeof(MemoryFooter::OverflowTest));
+        memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryFooter::OverflowTest));
     }
     else if (key == 'h')
     {
-        if (!MemoryHeader::Last)
+        if (!MemoryTracker::LastTracked)
             return;
 
         srand(time(nullptr));
         char memCorrupt[sizeof(MemoryHeader)];
         for (char& corrupt : memCorrupt)
-        {
+    {
             corrupt = static_cast<char>(rand() % 255);
         }
-        memcpy(MemoryHeader::Last, memCorrupt, sizeof(MemoryHeader));
+        memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryHeader));
     }
     else if (key == 'H')
     {
         //Extra Test
-        if (!MemoryHeader::Last)
+        if (!MemoryTracker::LastTracked)
             return;
 
         srand(time(nullptr));
@@ -435,11 +428,15 @@ void Keyboard(unsigned char key, int x, int y)
         {
             corrupt = static_cast<char>(rand() % 255);
         }
-        memcpy(MemoryHeader::Last->Header, memCorrupt, sizeof(MemoryHeader::UnderflowTest));
+        memcpy(MemoryTracker::LastTracked->Header, memCorrupt, sizeof(MemoryHeader::UnderflowTest));
     }
     else if (key == 'w')
     {
-        HeapChecker();
+        HeapChecker(MemoryTracker::LastTracked);
+    }
+    else if (key == 'W')
+    {
+	    HeapChecker(MemoryPoolManager::GetPoolLastAllocation(), false);
     }
     else if (key == 'r')
     {
@@ -463,7 +460,8 @@ void Keyboard(unsigned char key, int x, int y)
 int main(int argc, char** argv)
 {
     srand(static_cast<unsigned>(time(nullptr))); // Seed random number generator
-    MemoryTracker::Get().RemoveAllocation(MemoryTracker::Get().GetAllocation()); // Removed random byte allocation before main even runs
+    //Leaving this commented out for now as it *is* still memory allocated - confident this is stdlib allocations.
+	//MemoryTracker::Get().RemoveAllocation(MemoryTracker::Get().GetAllocation()); // Removed random byte allocation before main even runs
 	glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(RESOLUTION_X, RESOLUTION_Y);

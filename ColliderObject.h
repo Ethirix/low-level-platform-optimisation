@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vec3.h"
+#include "Vector3.h"
 #include <list>
 #include <GL/glut.h>
 #include "globals.h"
@@ -8,14 +8,14 @@
 class ColliderObject
 {
 public:
-    Vec3 Position;
-    Vec3 Size;
-    Vec3 Velocity;
-    Vec3 Colour;
+    Vector3 Position;
+    Vector3 Size;
+    Vector3 Velocity;
+    Vector3 Colour;
 
     // if two colliders collide, push them away from each other
     void ResolveCollision(ColliderObject* a, ColliderObject* b) {
-        Vec3 normal = { a->Position.X - b->Position.X, a->Position.Y - b->Position.Y, a->Position.Z - b->Position.Z };
+        Vector3 normal = { a->Position.X - b->Position.X, a->Position.Y - b->Position.Y, a->Position.Z - b->Position.Z };
         //float length = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
 
         // Normalize the normal vector
@@ -68,7 +68,7 @@ public:
         glPopMatrix();
     }
 
-    virtual void DrawMesh() {};
+    virtual void DrawMesh() {}
 
     virtual ~ColliderObject() = default;
 
