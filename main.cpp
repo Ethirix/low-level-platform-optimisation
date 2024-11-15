@@ -46,117 +46,117 @@ std::list<ColliderObject*> Colliders;
 template <typename T>
 void DeleteColliderOfType() requires std::derived_from<T, ColliderObject> && (!std::is_same_v<T, ColliderObject>)
 {
-    if (Colliders.empty())
-        return;
+	if (Colliders.empty())
+		return;
 
-    T* obj = nullptr;
-    for (ColliderObject* collider : Colliders)
-    {
-        obj = dynamic_cast<T*>(collider);
-        if (obj)
-            break;
-    }
+	T* obj = nullptr;
+	for (ColliderObject* collider : Colliders)
+	{
+		obj = dynamic_cast<T*>(collider);
+		if (obj)
+			break;
+	}
 
-    Colliders.remove(obj);
-    delete obj;
+	Colliders.remove(obj);
+	delete obj;
 }
 
 template <typename T>
 void CreateObjectOfType() requires std::derived_from<T, ColliderObject> && (!std::is_same_v<T, ColliderObject>)
 {
-    T* obj = new T();
+	T* obj = new T();
 
-    // Assign random x, y, and z positions within specified ranges
-    obj->Position.X = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
-    obj->Position.Y = 10.0f + static_cast<float>(rand()) / (RAND_MAX / 1.0f);
-    obj->Position.Z = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
+	// Assign random x, y, and z positions within specified ranges
+	obj->Position.X = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
+	obj->Position.Y = 10.0f + static_cast<float>(rand()) / (RAND_MAX / 1.0f);
+	obj->Position.Z = static_cast<float>(rand()) / (RAND_MAX / 20.0f);
 
-    obj->Size = { 1.0f, 1.0f, 1.0f };
+	obj->Size = { 1.0f, 1.0f, 1.0f };
 
-    // Assign random x-velocity between -1.0f and 1.0f
-    float randomXVelocity = -1.0f + static_cast<float>(rand()) / (RAND_MAX / 2.0f);
-    obj->Velocity = { randomXVelocity, 0.0f, 0.0f };
+	// Assign random x-velocity between -1.0f and 1.0f
+	float randomXVelocity = -1.0f + static_cast<float>(rand()) / (RAND_MAX / 2.0f);
+	obj->Velocity = { randomXVelocity, 0.0f, 0.0f };
 
-    // Assign a random color to the box
-    obj->Colour.X = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-    obj->Colour.Y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-    obj->Colour.Z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+	// Assign a random color to the box
+	obj->Colour.X = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+	obj->Colour.Y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+	obj->Colour.Z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 
-    Colliders.push_back(obj);
+	Colliders.push_back(obj);
 }
 
 void InitScene(int boxCount, int sphereCount)
 {
 	std::thread box([](int count) -> void
-    {
-	    for (int i = 0; i < count; ++i) 
+	{
+		for (int i = 0; i < count; ++i) 
 		{
 			CreateObjectOfType<Box>();
 		}
-    }, boxCount);
+	}, boxCount);
 
 	std::thread sphere([](int count) -> void
 	{
-	    for (int i = 0; i < count; ++i) 
-	    {
-	        CreateObjectOfType<Sphere>();
-	    }
+		for (int i = 0; i < count; ++i) 
+		{
+			CreateObjectOfType<Sphere>();
+		}
 	}, sphereCount);
 
-    box.join();
-    sphere.join();
+	box.join();
+	sphere.join();
 }
 
 // a ray which is used to tap (by default, remove) a box - see the 'mouse' function for how this is used.
 bool RayBoxIntersection(const Vector3& rayOrigin, const Vector3& rayDirection, const ColliderObject* box)
 {
-    float tMin = (box->Position.X - box->Size.X / 2.0f - rayOrigin.X) / rayDirection.X;
-    float tMax = (box->Position.X + box->Size.X / 2.0f - rayOrigin.X) / rayDirection.X;
+	float tMin = (box->Position.X - box->Size.X / 2.0f - rayOrigin.X) / rayDirection.X;
+	float tMax = (box->Position.X + box->Size.X / 2.0f - rayOrigin.X) / rayDirection.X;
 
-    if (tMin > tMax) std::swap(tMin, tMax);
+	if (tMin > tMax) std::swap(tMin, tMax);
 
-    float tyMin = (box->Position.Y - box->Size.Y / 2.0f - rayOrigin.Y) / rayDirection.Y;
-    float tyMax = (box->Position.Y + box->Size.Y / 2.0f - rayOrigin.Y) / rayDirection.Y;
+	float tyMin = (box->Position.Y - box->Size.Y / 2.0f - rayOrigin.Y) / rayDirection.Y;
+	float tyMax = (box->Position.Y + box->Size.Y / 2.0f - rayOrigin.Y) / rayDirection.Y;
 
-    if (tyMin > tyMax) std::swap(tyMin, tyMax);
+	if (tyMin > tyMax) std::swap(tyMin, tyMax);
 
-    if (tMin > tyMax || tyMin > tMax)
-        return false;
+	if (tMin > tyMax || tyMin > tMax)
+		return false;
 
-    tMin = std::max(tyMin, tMin);
-    tMax = std::min(tyMax, tMax);
+	tMin = std::max(tyMin, tMin);
+	tMax = std::min(tyMax, tMax);
 
-    float tzMin = (box->Position.Z - box->Size.Z / 2.0f - rayOrigin.Z) / rayDirection.Z;
-    float tzMax = (box->Position.Z + box->Size.Z / 2.0f - rayOrigin.Z) / rayDirection.Z;
+	float tzMin = (box->Position.Z - box->Size.Z / 2.0f - rayOrigin.Z) / rayDirection.Z;
+	float tzMax = (box->Position.Z + box->Size.Z / 2.0f - rayOrigin.Z) / rayDirection.Z;
 
-    if (tzMin > tzMax) std::swap(tzMin, tzMax);
+	if (tzMin > tzMax) std::swap(tzMin, tzMax);
 
-    if (tMin > tzMax || tzMin > tMax)
-        return false;
+	if (tMin > tzMax || tzMin > tMax)
+		return false;
 
-    return true;
+	return true;
 }
 
 // used in the 'mouse' tap function to convert a screen point to a point in the world
 Vector3 ScreenToWorld(int x, int y)
 {
-    GLint viewport[4];
-    GLdouble modelView[16];
-    GLdouble projection[16];
-    GLfloat winX, winY, winZ;
-    GLdouble posX, posY, posZ;
+	GLint viewport[4];
+	GLdouble modelView[16];
+	GLdouble projection[16];
+	GLfloat winX, winY, winZ;
+	GLdouble posX, posY, posZ;
 
-    glGetDoublev(GL_MODELVIEW_MATRIX, modelView);
-    glGetDoublev(GL_PROJECTION_MATRIX, projection);
-    glGetIntegerv(GL_VIEWPORT, viewport);
+	glGetDoublev(GL_MODELVIEW_MATRIX, modelView);
+	glGetDoublev(GL_PROJECTION_MATRIX, projection);
+	glGetIntegerv(GL_VIEWPORT, viewport);
 
-    winX = (float)x;
-    winY = (float)viewport[3] - (float)y;
-    glReadPixels(x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
+	winX = (float)x;
+	winY = (float)viewport[3] - (float)y;
+	glReadPixels(x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
 
-    gluUnProject(winX, winY, winZ, modelView, projection, viewport, &posX, &posY, &posZ);
+	gluUnProject(winX, winY, winZ, modelView, projection, viewport, &posX, &posY, &posZ);
 
-    return {(float)posX, (float)posY, (float)posZ};
+	return {(float)posX, (float)posY, (float)posZ};
 }
 
 #if THREADED_SEARCH_TEST
@@ -165,17 +165,17 @@ float SearchForHighestCollider(unsigned startIndex, unsigned endIndex)
 {
 	std::list<ColliderObject*>::iterator startIt = Colliders.begin();
 	std::list<ColliderObject*>::iterator endIt = Colliders.begin();
-    std::advance(startIt, startIndex);
-    if (endIndex != Colliders.size())
+	std::advance(startIt, startIndex);
+	if (endIndex != Colliders.size())
 		std::advance(endIt, endIndex - 1);
-    else
+	else
 		endIt = Colliders.end();
 
 	float largest = 0;
-    std::for_each(startIt, endIt, [&largest](const ColliderObject* obj)
-    {
-	    largest = std::max(std::abs(obj->Position.Y), largest);
-    });
+	std::for_each(startIt, endIt, [&largest](const ColliderObject* obj)
+	{
+		largest = std::max(std::abs(obj->Position.Y), largest);
+	});
 
 
 	return largest;
@@ -186,37 +186,37 @@ float SearchForHighestElement(unsigned threadCount)
 {
 	float highestElement = 0;
 
-    // Will defer threading if list of colliders is small enough.
-    if (std::pow(threadCount, 2) >= Colliders.size())
-    {
-	    highestElement = SearchForHighestCollider(0, Colliders.size()) / 2.0f;
-    }
-    else 
-    {
-	    float* results = new float[threadCount];
-	    std::thread* threads = new std::thread[threadCount];
+	// Will defer threading if list of colliders is small enough.
+	if (std::pow(threadCount, 2) >= Colliders.size())
+	{
+		highestElement = SearchForHighestCollider(0, Colliders.size()) / 2.0f;
+	}
+	else 
+	{
+		float* results = new float[threadCount];
+		std::thread* threads = new std::thread[threadCount];
 
-	    for (unsigned i = 0; i < threadCount; i++)
-	    {
-		    threads[i] = std::thread([&results, i](unsigned startIndex, unsigned endIndex)
-		    {
-			    results[i] = SearchForHighestCollider(startIndex, endIndex);
-		    }, Colliders.size() / threadCount * i,
+		for (unsigned i = 0; i < threadCount; i++)
+		{
+			threads[i] = std::thread([&results, i](unsigned startIndex, unsigned endIndex)
+			{
+				results[i] = SearchForHighestCollider(startIndex, endIndex);
+			}, Colliders.size() / threadCount * i,
 					Colliders.size() / threadCount * (i + 1) + 
 					(i + 1 == threadCount ? Colliders.size() % threadCount : 0));
-	    }
+		}
 
-        for (unsigned i = 0; i < threadCount; i++)
-            threads[i].join();
+		for (unsigned i = 0; i < threadCount; i++)
+			threads[i].join();
 
-        for (unsigned i = 0; i < threadCount; i++)
-            highestElement = std::max(highestElement, results[i]);
+		for (unsigned i = 0; i < threadCount; i++)
+			highestElement = std::max(highestElement, results[i]);
 
-        delete[] threads;
-        delete[] results;
-    }
+		delete[] threads;
+		delete[] results;
+	}
 
-    return highestElement;
+	return highestElement;
 }
 
 #endif
@@ -224,108 +224,108 @@ float SearchForHighestElement(unsigned threadCount)
 // update the physics: gravity, collision test, collision resolution
 void UpdatePhysics(const float deltaTime)
 {
-    // TODO: for the assessment - use a thread for each sub-region
-    // for example, assuming we have two regions:
-    // from 'colliders' create two separate lists
-    // empty each list (from previous frame) and work out which collidable object is in which region, 
-    //  and add the pointer to that region's list.
-    // Then, run two threads with the code below (changing 'colliders' to be the region's list)
+	// TODO: for the assessment - use a thread for each sub-region
+	// for example, assuming we have two regions:
+	// from 'colliders' create two separate lists
+	// empty each list (from previous frame) and work out which collidable object is in which region, 
+	//  and add the pointer to that region's list.
+	// Then, run two threads with the code below (changing 'colliders' to be the region's list)
 
-    //world is 40xYx60
-    //octree use the biggest dimension - determine where to stop the either Z or Y from the octree, or just set it to massive.
+	//world is 40xYx60
+	//octree use the biggest dimension - determine where to stop the either Z or Y from the octree, or just set it to massive.
 
-    auto start = std::chrono::steady_clock::now();
-    float size = 0;
+	auto start = std::chrono::steady_clock::now();
+	float size = 0;
 
 #if THREADED_SEARCH_TEST
 	unsigned threadCount = std::thread::hardware_concurrency();
 	std::thread t{[&size, threadCount]
-    {
-	     size = SearchForHighestElement(threadCount / 8);
-    }};
+	{
+		 size = SearchForHighestElement(threadCount / 8);
+	}};
 
-    t.join();
+	t.join();
 #endif
 
-    for (ColliderObject* collider : Colliders)
-	    size = std::max(size, std::abs(collider->Position.Y));
+	for (ColliderObject* collider : Colliders)
+		size = std::max(size, std::abs(collider->Position.Y));
 
-    auto endOfSearch = std::chrono::steady_clock::now();
+	auto endOfSearch = std::chrono::steady_clock::now();
 
-    //for (ColliderObject* collider : Colliders)
+	//for (ColliderObject* collider : Colliders)
 	   // halfSize = std::max(std::abs(collider->Position.Y), halfSize);
-    //halfSize = std::max({MAX_X * 2, MAX_Z * 2, std::ceilf(halfSize)});
+	//halfSize = std::max({MAX_X * 2, MAX_Z * 2, std::ceilf(halfSize)});
 
-    for (ColliderObject* box : Colliders) 
-    { 
-        box->Update(&Colliders, deltaTime);
-    }
+	for (ColliderObject* box : Colliders) 
+	{ 
+		box->Update(&Colliders, deltaTime);
+	}
 
-    auto endOfUpdate = std::chrono::steady_clock::now();
+	auto endOfUpdate = std::chrono::steady_clock::now();
 
-    std::cout << "Time to Complete Search: " << duration_cast<std::chrono::microseconds>(endOfSearch - start) << '\n';
-    std::cout << "Time to Complete Update: " << duration_cast<std::chrono::microseconds>(endOfUpdate - endOfSearch) << '\n';
-    std::cout << "Total: " << duration_cast<std::chrono::microseconds>(endOfUpdate - start) << '\n';
+	std::cout << "Time to Complete Search: " << duration_cast<std::chrono::microseconds>(endOfSearch - start) << '\n';
+	std::cout << "Time to Complete Update: " << duration_cast<std::chrono::microseconds>(endOfUpdate - endOfSearch) << '\n';
+	std::cout << "Total: " << duration_cast<std::chrono::microseconds>(endOfUpdate - start) << '\n';
 }
 
 // draw the sides of the containing area
 void DrawQuad(const Vector3& v1, const Vector3& v2, const Vector3& v3, const Vector3& v4)
 {
-    glBegin(GL_QUADS);
-    glVertex3f(v1.X, v1.Y, v1.Z);
-    glVertex3f(v2.X, v2.Y, v2.Z);
-    glVertex3f(v3.X, v3.Y, v3.Z);
-    glVertex3f(v4.X, v4.Y, v4.Z);
-    glEnd();
+	glBegin(GL_QUADS);
+	glVertex3f(v1.X, v1.Y, v1.Z);
+	glVertex3f(v2.X, v2.Y, v2.Z);
+	glVertex3f(v3.X, v3.Y, v3.Z);
+	glVertex3f(v4.X, v4.Y, v4.Z);
+	glEnd();
 }
 
 // draw the entire scene
 void DrawScene()
 {
-    // Draw the side wall
-    GLfloat diffuseMaterial[] = {0.2f, 0.2f, 0.2f, 1.0f};
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuseMaterial);
+	// Draw the side wall
+	GLfloat diffuseMaterial[] = {0.2f, 0.2f, 0.2f, 1.0f};
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuseMaterial);
 
-    // Draw the left side wall
-    glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vector3 leftSideWallV1(MIN_X, 0.0f, MAX_Z);
-    Vector3 leftSideWallV2(MIN_X, 50.0f, MAX_Z);
-    Vector3 leftSideWallV3(MIN_X, 50.0f, MIN_Z);
-    Vector3 leftSideWallV4(MIN_X, 0.0f, MIN_Z);
-    DrawQuad(leftSideWallV1, leftSideWallV2, leftSideWallV3, leftSideWallV4);
+	// Draw the left side wall
+	glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
+	Vector3 leftSideWallV1(MIN_X, 0.0f, MAX_Z);
+	Vector3 leftSideWallV2(MIN_X, 50.0f, MAX_Z);
+	Vector3 leftSideWallV3(MIN_X, 50.0f, MIN_Z);
+	Vector3 leftSideWallV4(MIN_X, 0.0f, MIN_Z);
+	DrawQuad(leftSideWallV1, leftSideWallV2, leftSideWallV3, leftSideWallV4);
 
-    // Draw the right side wall
-    glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vector3 rightSideWallV1(MAX_X, 0.0f, MAX_Z);
-    Vector3 rightSideWallV2(MAX_X, 50.0f, MAX_Z);
-    Vector3 rightSideWallV3(MAX_X, 50.0f, MIN_Z);
-    Vector3 rightSideWallV4(MAX_X, 0.0f, MIN_Z);
-    DrawQuad(rightSideWallV1, rightSideWallV2, rightSideWallV3, rightSideWallV4);
+	// Draw the right side wall
+	glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
+	Vector3 rightSideWallV1(MAX_X, 0.0f, MAX_Z);
+	Vector3 rightSideWallV2(MAX_X, 50.0f, MAX_Z);
+	Vector3 rightSideWallV3(MAX_X, 50.0f, MIN_Z);
+	Vector3 rightSideWallV4(MAX_X, 0.0f, MIN_Z);
+	DrawQuad(rightSideWallV1, rightSideWallV2, rightSideWallV3, rightSideWallV4);
 
 
-    // Draw the back wall
-    glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
-    Vector3 backWallV1(MIN_X, 0.0f, MIN_Z);
-    Vector3 backWallV2(MIN_X, 50.0f, MIN_Z);
-    Vector3 backWallV3(MAX_X, 50.0f, MIN_Z);
-    Vector3 backWallV4(MAX_X, 0.0f, MIN_Z);
-    DrawQuad(backWallV1, backWallV2, backWallV3, backWallV4);
+	// Draw the back wall
+	glColor3f(0.5f, 0.5f, 0.5f); // Set the wall color
+	Vector3 backWallV1(MIN_X, 0.0f, MIN_Z);
+	Vector3 backWallV2(MIN_X, 50.0f, MIN_Z);
+	Vector3 backWallV3(MAX_X, 50.0f, MIN_Z);
+	Vector3 backWallV4(MAX_X, 0.0f, MIN_Z);
+	DrawQuad(backWallV1, backWallV2, backWallV3, backWallV4);
 
-    for (ColliderObject* box : Colliders) {
-        box->Draw();
-    }
+	for (ColliderObject* box : Colliders) {
+		box->Draw();
+	}
 }
 
 // called by GLUT - displays the scene
 void Display() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
 
-    gluLookAt(LOOK_AT_X, LOOK_AT_Y, LOOK_AT_Z, LOOK_DIR_X, LOOK_DIR_Y, LOOK_DIR_Z, 0, 1, 0);
+	gluLookAt(LOOK_AT_X, LOOK_AT_Y, LOOK_AT_Z, LOOK_DIR_X, LOOK_DIR_Y, LOOK_DIR_Z, 0, 1, 0);
 
-    DrawScene();
+	DrawScene();
 
-    glutSwapBuffers();
+	glutSwapBuffers();
 }
 
 // Called by GLUT when the cpu is idle - has a timer function you can use for FPS, and updates the physics
@@ -333,92 +333,92 @@ void Display() {
 // NOTE this may be capped at 60 fps as we are using glutPostRedisplay(). If you want it to go higher than this, maybe a thread will help here. 
 void Idle()
 {
-    static auto last = std::chrono::steady_clock::now();
-    auto old = last;
-    last = std::chrono::steady_clock::now();
-    const std::chrono::duration<float> frameTime = last - old;
-    float deltaTime = frameTime.count();
+	static auto last = std::chrono::steady_clock::now();
+	auto old = last;
+	last = std::chrono::steady_clock::now();
+	const std::chrono::duration<float> frameTime = last - old;
+	float deltaTime = frameTime.count();
 
-    UpdatePhysics(deltaTime);
+	UpdatePhysics(deltaTime);
 
-    // tell glut to draw - note this will cap this function at 60 fps <- wrong this caps it to your monitor refresh rate
-    glutPostRedisplay();
+	// tell glut to draw - note this will cap this function at 60 fps <- wrong this caps it to your monitor refresh rate
+	glutPostRedisplay();
 }
 
 // called the mouse button is tapped
 void Mouse(int button, int state, int x, int y)
 {
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-        // Get the camera position and direction
-        Vector3 cameraPosition(LOOK_AT_X, LOOK_AT_Y, LOOK_AT_Z); // Replace with your actual camera position
-        Vector3 cameraDirection(LOOK_DIR_X, LOOK_DIR_Y, LOOK_DIR_Z); // Replace with your actual camera direction
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		// Get the camera position and direction
+		Vector3 cameraPosition(LOOK_AT_X, LOOK_AT_Y, LOOK_AT_Z); // Replace with your actual camera position
+		Vector3 cameraDirection(LOOK_DIR_X, LOOK_DIR_Y, LOOK_DIR_Z); // Replace with your actual camera direction
 
-        // Get the world coordinates of the clicked point
-        Vector3 clickedWorldPos = ScreenToWorld(x, y);
+		// Get the world coordinates of the clicked point
+		Vector3 clickedWorldPos = ScreenToWorld(x, y);
 
-        // Calculate the ray direction from the camera position to the clicked point
-        Vector3 rayDirection = clickedWorldPos - cameraPosition;
-        rayDirection.Normalise();
+		// Calculate the ray direction from the camera position to the clicked point
+		Vector3 rayDirection = clickedWorldPos - cameraPosition;
+		rayDirection.Normalise();
 
-        // Perform a ray-box intersection test and remove the clicked box
-        bool clickedBoxOK = false;
-        float minIntersectionDistance = std::numeric_limits<float>::max();
+		// Perform a ray-box intersection test and remove the clicked box
+		bool clickedBoxOK = false;
+		float minIntersectionDistance = std::numeric_limits<float>::max();
 
-        ColliderObject* intersectedBox = nullptr;
-        for (ColliderObject* box : Colliders) {
-            if (RayBoxIntersection(cameraPosition, rayDirection, box)) {
-                // Calculate the distance between the camera and the intersected box
-                Vector3 diff = box->Position - cameraPosition;
+		ColliderObject* intersectedBox = nullptr;
+		for (ColliderObject* box : Colliders) {
+			if (RayBoxIntersection(cameraPosition, rayDirection, box)) {
+				// Calculate the distance between the camera and the intersected box
+				Vector3 diff = box->Position - cameraPosition;
 
-                // Update the clicked box index if this box is closer to the camera
-                if (float distance = diff.Length(); distance < minIntersectionDistance) {
-                    clickedBoxOK = true;
-                    minIntersectionDistance = distance;
-                    intersectedBox = box;
-                }
-            }
-        }
+				// Update the clicked box index if this box is closer to the camera
+				if (float distance = diff.Length(); distance < minIntersectionDistance) {
+					clickedBoxOK = true;
+					minIntersectionDistance = distance;
+					intersectedBox = box;
+				}
+			}
+		}
 
-        // Remove the clicked box if any
-        if (clickedBoxOK != false) {
-        	Colliders.remove(intersectedBox);
-            delete intersectedBox;
-        }
-    }
+		// Remove the clicked box if any
+		if (clickedBoxOK != false) {
+			Colliders.remove(intersectedBox);
+			delete intersectedBox;
+		}
+	}
 }
 
 void HeapChecker(const MemoryFooter* startingNode, bool isGlobal = true)
 {
-    std::cout << "Heap Walk Started\n\n";
-    const MemoryFooter* currentNode = startingNode;
-    unsigned i = 0;
+	std::cout << "Heap Walk Started\n\n";
+	const MemoryFooter* currentNode = startingNode;
+	unsigned i = 0;
 
-    while(currentNode)
-    {
-        MemoryHeader* currentNodeHeader = currentNode->Header;
+	while(currentNode)
+	{
+		MemoryHeader* currentNodeHeader = currentNode->Header;
 
-        std::cout << "Start of Memory Block " << ++i << '\n';
-        if (currentNode == nullptr || currentNode->OverflowTest != OVERFLOW_TEST)
-        {
-	        std::cout << "    Err: Overflow Test Failed [Footer]" << '\n';
-        }
-        if (currentNodeHeader == nullptr || currentNodeHeader->UnderflowTest != UNDERFLOW_TEST)
-        {
-            std::cout << "    Err: Underflow Test Failed [Header]" << '\n';
-        }
-        if (currentNodeHeader == nullptr)
-        {
-            std::cout << "CRITICAL ERROR: MEMORY HEADER IS NULL | BREAKING HEAP WALK" << '\n';
-            return;
-        }
+		std::cout << "Start of Memory Block " << ++i << '\n';
+		if (currentNode == nullptr || currentNode->OverflowTest != OVERFLOW_TEST)
+		{
+			std::cout << "    Err: Overflow Test Failed [Footer]" << '\n';
+		}
+		if (currentNodeHeader == nullptr || currentNodeHeader->UnderflowTest != UNDERFLOW_TEST)
+		{
+			std::cout << "    Err: Underflow Test Failed [Header]" << '\n';
+		}
+		if (currentNodeHeader == nullptr)
+		{
+			std::cout << "CRITICAL ERROR: MEMORY HEADER IS NULL | BREAKING HEAP WALK" << '\n';
+			return;
+		}
 
-        std::cout << "    Address: 0x" << currentNode << '\n';
-        std::cout << "    Size: " << currentNodeHeader->Size << " bytes\n";
-        std::cout << "    Pool Allocated: " << (currentNode->Next || currentNodeHeader->Previous ? "True" : "False") << '\n';
-        std::cout << "End of Memory Block " << i << "\n\n";
+		std::cout << "    Address: 0x" << currentNode << '\n';
+		std::cout << "    Size: " << currentNodeHeader->Size << " bytes\n";
+		std::cout << "    Pool Allocated: " << (currentNode->Next || currentNodeHeader->Previous ? "True" : "False") << '\n';
+		std::cout << "End of Memory Block " << i << "\n\n";
 
-    	currentNode = isGlobal ? currentNodeHeader->GlobalPrevious : currentNodeHeader->Previous;
-    }
+		currentNode = isGlobal ? currentNodeHeader->GlobalPrevious : currentNodeHeader->Previous;
+	}
 
 	std::cout << "Heap Walk Successful\n\n";
 }
@@ -426,165 +426,165 @@ void HeapChecker(const MemoryFooter* startingNode, bool isGlobal = true)
 // called when the keyboard is used
 void Keyboard(unsigned char key, int x, int y)
 {
-    static int* randomData[DEBUG_INT_ALLOC_SIZE];
-    static unsigned index;
+	static int* randomData[DEBUG_INT_ALLOC_SIZE];
+	static unsigned index;
 	if (key == ' ') // Spacebar key 
-    { 
-        for (ColliderObject* box : Colliders)
-        {
-	        constexpr float impulseMagnitude = 20.0f;
-	        box->Velocity.Y += impulseMagnitude;
-        }
-    }
-    else if (key == 'm')
-    { 
-        std::cout << "Memory used: " << MemoryTracker::Get().GetAllocation() << "B\n";
-        std::cout << "Pool Memory used: " << MemoryPoolManager::GetPoolAllocatedSize() << "B\n";
-        std::cout << "Pool Memory size: " << POOL_SIZE << "B\n";
-        std::cout << "Box Memory used: " << Box::MemoryTracker.GetAllocation() << "B\n";
-        std::cout << "Sphere Memory Used: " << Sphere::MemoryTracker.GetAllocation() << "B\n";
-        std::cout << '\n';
-    }
-    else if (key == 't')
-    {
-        if (index < DEBUG_INT_ALLOC_SIZE)
-        {
-	        randomData[index++] = new int[8];
-        }
-        else
-        {
-	        std::cout << "Err: Max Testing Heap Allocation Reached - Size: " << DEBUG_INT_ALLOC_SIZE << '\n';
-        }
-    }
-    else if (key == 'u')
-    {
-        if (index > 0)
-        {
-        	int* data = randomData[--index];
-	        delete[] data;
-        }
-    }
-    else if (key == '2')
-    {
-	    for (ColliderObject* collider : Colliders)
-	    {
-            delete collider;
-	    }
+	{ 
+		for (ColliderObject* box : Colliders)
+		{
+			constexpr float impulseMagnitude = 20.0f;
+			box->Velocity.Y += impulseMagnitude;
+		}
+	}
+	else if (key == 'm')
+	{ 
+		std::cout << "Memory used: " << MemoryTracker::Get().GetAllocation() << "B\n";
+		std::cout << "Pool Memory used: " << MemoryPoolManager::GetPoolAllocatedSize() << "B\n";
+		std::cout << "Pool Memory size: " << POOL_SIZE << "B\n";
+		std::cout << "Box Memory used: " << Box::MemoryTracker.GetAllocation() << "B\n";
+		std::cout << "Sphere Memory Used: " << Sphere::MemoryTracker.GetAllocation() << "B\n";
+		std::cout << '\n';
+	}
+	else if (key == 't')
+	{
+		if (index < DEBUG_INT_ALLOC_SIZE)
+		{
+			randomData[index++] = new int[8];
+		}
+		else
+		{
+			std::cout << "Err: Max Testing Heap Allocation Reached - Size: " << DEBUG_INT_ALLOC_SIZE << '\n';
+		}
+	}
+	else if (key == 'u')
+	{
+		if (index > 0)
+		{
+			int* data = randomData[--index];
+			delete[] data;
+		}
+	}
+	else if (key == '2')
+	{
+		for (ColliderObject* collider : Colliders)
+		{
+			delete collider;
+		}
 
-        Colliders.clear();
-    }
-    else if (key == 'f')
-    {
-        if (!MemoryTracker::LastTracked)
-            return;
+		Colliders.clear();
+	}
+	else if (key == 'f')
+	{
+		if (!MemoryTracker::LastTracked)
+			return;
 
-        srand(time(nullptr));
-    	char memCorrupt[sizeof(MemoryFooter)];
-        for (char &corrupt : memCorrupt)
-        {
-            corrupt = static_cast<char>(rand() % 255);
-        }
-        memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryFooter));
-    }
-    else if (key == 'F')
-    {
-	    //Extra Test
-        if (!MemoryTracker::LastTracked)
-            return;
+		srand(time(nullptr));
+		char memCorrupt[sizeof(MemoryFooter)];
+		for (char &corrupt : memCorrupt)
+		{
+			corrupt = static_cast<char>(rand() % 255);
+		}
+		memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryFooter));
+	}
+	else if (key == 'F')
+	{
+		//Extra Test
+		if (!MemoryTracker::LastTracked)
+			return;
 
-        srand(time(nullptr));
-        char memCorrupt[sizeof(MemoryFooter::OverflowTest)];
-        for (char& corrupt : memCorrupt)
-        {
-            corrupt = static_cast<char>(rand() % 255);
-        }
-        memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryFooter::OverflowTest));
-    }
-    else if (key == 'h')
-    {
-        if (!MemoryTracker::LastTracked)
-            return;
+		srand(time(nullptr));
+		char memCorrupt[sizeof(MemoryFooter::OverflowTest)];
+		for (char& corrupt : memCorrupt)
+		{
+			corrupt = static_cast<char>(rand() % 255);
+		}
+		memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryFooter::OverflowTest));
+	}
+	else if (key == 'h')
+	{
+		if (!MemoryTracker::LastTracked)
+			return;
 
-        srand(time(nullptr));
-        char memCorrupt[sizeof(MemoryHeader)];
-        for (char& corrupt : memCorrupt)
-    {
-            corrupt = static_cast<char>(rand() % 255);
-        }
-        memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryHeader));
-    }
-    else if (key == 'H')
-    {
-        //Extra Test
-        if (!MemoryTracker::LastTracked)
-            return;
+		srand(time(nullptr));
+		char memCorrupt[sizeof(MemoryHeader)];
+		for (char& corrupt : memCorrupt)
+	{
+			corrupt = static_cast<char>(rand() % 255);
+		}
+		memcpy(MemoryTracker::LastTracked, memCorrupt, sizeof(MemoryHeader));
+	}
+	else if (key == 'H')
+	{
+		//Extra Test
+		if (!MemoryTracker::LastTracked)
+			return;
 
-        srand(time(nullptr));
-        char memCorrupt[sizeof(MemoryHeader::UnderflowTest)];
-        for (char& corrupt : memCorrupt)
-        {
-            corrupt = static_cast<char>(rand() % 255);
-        }
-        memcpy(MemoryTracker::LastTracked->Header, memCorrupt, sizeof(MemoryHeader::UnderflowTest));
-    }
-    else if (key == 'w')
-    {
-        HeapChecker(MemoryTracker::LastTracked);
-    }
-    else if (key == 'W')
-    {
-	    HeapChecker(MemoryPoolManager::GetPoolLastAllocation(), false);
-    }
-    else if (key == 'r')
-    {
-        DeleteColliderOfType<Box>();
-    }
-    else if (key == 'a')
-    {
-        CreateObjectOfType<Box>();
-    }
-    else if (key == 'R')
-    {
-        DeleteColliderOfType<Sphere>();
-    }
-    else if (key == 'A')
-    {
-        CreateObjectOfType<Sphere>();
-    }
+		srand(time(nullptr));
+		char memCorrupt[sizeof(MemoryHeader::UnderflowTest)];
+		for (char& corrupt : memCorrupt)
+		{
+			corrupt = static_cast<char>(rand() % 255);
+		}
+		memcpy(MemoryTracker::LastTracked->Header, memCorrupt, sizeof(MemoryHeader::UnderflowTest));
+	}
+	else if (key == 'w')
+	{
+		HeapChecker(MemoryTracker::LastTracked);
+	}
+	else if (key == 'W')
+	{
+		HeapChecker(MemoryPoolManager::GetPoolLastAllocation(), false);
+	}
+	else if (key == 'r')
+	{
+		DeleteColliderOfType<Box>();
+	}
+	else if (key == 'a')
+	{
+		CreateObjectOfType<Box>();
+	}
+	else if (key == 'R')
+	{
+		DeleteColliderOfType<Sphere>();
+	}
+	else if (key == 'A')
+	{
+		CreateObjectOfType<Sphere>();
+	}
 }
 
 // The main function. 
 int main(int argc, char** argv)
 {
-    srand(static_cast<unsigned>(time(nullptr))); // Seed random number generator
-    //Leaving this commented out for now as it *is* still memory allocated - confident this is stdlib allocations.
+	srand(static_cast<unsigned>(time(nullptr))); // Seed random number generator
+	//Leaving this commented out for now as it *is* still memory allocated - confident this is stdlib allocations.
 	//MemoryTracker::Get().RemoveAllocation(MemoryTracker::Get().GetAllocation()); // Removed random byte allocation before main even runs
 
-    //Actively thread the object creation as a large amount of objects can be slow.
+	//Actively thread the object creation as a large amount of objects can be slow.
 	std::thread initScene(InitScene, NUMBER_OF_BOXES, NUMBER_OF_SPHERES);
 
 	glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutInitWindowSize(RESOLUTION_X, RESOLUTION_Y);
-    glutCreateWindow("Simple Physics Simulation");
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitWindowSize(RESOLUTION_X, RESOLUTION_Y);
+	glutCreateWindow("Simple Physics Simulation");
 
-    glutKeyboardFunc(Keyboard);
-    glutMouseFunc(Mouse);
+	glutKeyboardFunc(Keyboard);
+	glutMouseFunc(Mouse);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45.0, static_cast<double>(RESOLUTION_X) / RESOLUTION_Y, 0.1, 100.0);
-    glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(45.0, static_cast<double>(RESOLUTION_X) / RESOLUTION_Y, 0.1, 100.0);
+	glMatrixMode(GL_MODELVIEW);
 
-    glutDisplayFunc(Display);
-    glutIdleFunc(Idle);
+	glutDisplayFunc(Display);
+	glutIdleFunc(Idle);
 
-    initScene.join();
+	initScene.join();
 
-    // It will stick here until the program ends. 
-    glutMainLoop();
-    return 0;
+	// It will stick here until the program ends. 
+	glutMainLoop();
+	return 0;
 }
