@@ -20,12 +20,11 @@
 #include "Sphere.h"
 #include "Vector3.h"
 
-
-using namespace std::chrono;
+#define THREADED_SEARCH_TEST 0
 
 // This is the number of falling physical items. 
-#define NUMBER_OF_BOXES 5
-#define NUMBER_OF_SPHERES 5
+#define NUMBER_OF_BOXES 10
+#define NUMBER_OF_SPHERES 10
 
 #define RESOLUTION_X 1920
 #define RESOLUTION_Y 1080
@@ -160,6 +159,68 @@ Vector3 ScreenToWorld(int x, int y)
     return {(float)posX, (float)posY, (float)posZ};
 }
 
+#if THREADED_SEARCH_TEST
+
+float SearchForHighestCollider(unsigned startIndex, unsigned endIndex)
+{
+	std::list<ColliderObject*>::iterator startIt = Colliders.begin();
+	std::list<ColliderObject*>::iterator endIt = Colliders.begin();
+    std::advance(startIt, startIndex);
+    if (endIndex != Colliders.size())
+		std::advance(endIt, endIndex - 1);
+    else
+		endIt = Colliders.end();
+
+	float largest = 0;
+    std::for_each(startIt, endIt, [&largest](const ColliderObject* obj)
+    {
+	    largest = std::max(std::abs(obj->Position.Y), largest);
+    });
+
+
+	return largest;
+}
+
+// NOTE: THIS WAS AN ATTEMPT TO OPTIMISE THE HIGHEST COLLIDER SEARCH - IT FAILED SPECTACULARLY
+float SearchForHighestElement(unsigned threadCount)
+{
+	float highestElement = 0;
+
+    // Will defer threading if list of colliders is small enough.
+    if (std::pow(threadCount, 2) >= Colliders.size())
+    {
+	    highestElement = SearchForHighestCollider(0, Colliders.size()) / 2.0f;
+    }
+    else 
+    {
+	    float* results = new float[threadCount];
+	    std::thread* threads = new std::thread[threadCount];
+
+	    for (unsigned i = 0; i < threadCount; i++)
+	    {
+		    threads[i] = std::thread([&results, i](unsigned startIndex, unsigned endIndex)
+		    {
+			    results[i] = SearchForHighestCollider(startIndex, endIndex);
+		    }, Colliders.size() / threadCount * i,
+					Colliders.size() / threadCount * (i + 1) + 
+					(i + 1 == threadCount ? Colliders.size() % threadCount : 0));
+	    }
+
+        for (unsigned i = 0; i < threadCount; i++)
+            threads[i].join();
+
+        for (unsigned i = 0; i < threadCount; i++)
+            highestElement = std::max(highestElement, results[i]);
+
+        delete[] threads;
+        delete[] results;
+    }
+
+    return highestElement;
+}
+
+#endif
+
 // update the physics: gravity, collision test, collision resolution
 void UpdatePhysics(const float deltaTime)
 {
@@ -173,11 +234,38 @@ void UpdatePhysics(const float deltaTime)
     //world is 40xYx60
     //octree use the biggest dimension - determine where to stop the either Z or Y from the octree, or just set it to massive.
 
-    for (ColliderObject* box : colliders) { 
-        
+    auto start = std::chrono::steady_clock::now();
+    float size = 0;
+
+#if THREADED_SEARCH_TEST
+	unsigned threadCount = std::thread::hardware_concurrency();
+	std::thread t{[&size, threadCount]
+    {
+	     size = SearchForHighestElement(threadCount / 8);
+    }};
+
+    t.join();
+#endif
+
+    for (ColliderObject* collider : Colliders)
+	    size = std::max(size, std::abs(collider->Position.Y));
+
+    auto endOfSearch = std::chrono::steady_clock::now();
+
+    //for (ColliderObject* collider : Colliders)
+	   // halfSize = std::max(std::abs(collider->Position.Y), halfSize);
+    //halfSize = std::max({MAX_X * 2, MAX_Z * 2, std::ceilf(halfSize)});
+
+    for (ColliderObject* box : Colliders) 
+    { 
         box->Update(&Colliders, deltaTime);
-        
     }
+
+    auto endOfUpdate = std::chrono::steady_clock::now();
+
+    std::cout << "Time to Complete Search: " << duration_cast<std::chrono::microseconds>(endOfSearch - start) << '\n';
+    std::cout << "Time to Complete Update: " << duration_cast<std::chrono::microseconds>(endOfUpdate - endOfSearch) << '\n';
+    std::cout << "Total: " << duration_cast<std::chrono::microseconds>(endOfUpdate - start) << '\n';
 }
 
 // draw the sides of the containing area
@@ -245,18 +333,15 @@ void Display() {
 // NOTE this may be capped at 60 fps as we are using glutPostRedisplay(). If you want it to go higher than this, maybe a thread will help here. 
 void Idle()
 {
-    static auto last = steady_clock::now();
+    static auto last = std::chrono::steady_clock::now();
     auto old = last;
-    last = steady_clock::now();
-    const duration<float> frameTime = last - old;
+    last = std::chrono::steady_clock::now();
+    const std::chrono::duration<float> frameTime = last - old;
     float deltaTime = frameTime.count();
-
-    //if (deltaTime > 1)
-    //    return;
 
     UpdatePhysics(deltaTime);
 
-    // tell glut to draw - note this will cap this function at 60 fps
+    // tell glut to draw - note this will cap this function at 60 fps <- wrong this caps it to your monitor refresh rate
     glutPostRedisplay();
 }
 
