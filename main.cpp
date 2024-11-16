@@ -21,10 +21,11 @@
 #include "Vector3.h"
 
 #define THREADED_SEARCH_TEST 0
+#define THREADED_COLLIDER_CREATION 0
 
 // This is the number of falling physical items. 
-#define NUMBER_OF_BOXES 10
-#define NUMBER_OF_SPHERES 10
+#define NUMBER_OF_BOXES 100
+#define NUMBER_OF_SPHERES 100
 
 #define RESOLUTION_X 1920
 #define RESOLUTION_Y 1080
@@ -87,6 +88,11 @@ void CreateObjectOfType() requires std::derived_from<T, ColliderObject> && (!std
 
 void InitScene(int boxCount, int sphereCount)
 {
+	auto start = std::chrono::steady_clock::now();
+
+	// NOTE: This also is slower under most circumstances than running it on its own.
+#if THREADED_COLLIDER_CREATION
+
 	std::thread box([](int count) -> void
 	{
 		for (int i = 0; i < count; ++i) 
@@ -105,6 +111,24 @@ void InitScene(int boxCount, int sphereCount)
 
 	box.join();
 	sphere.join();
+
+#else
+
+	for (int i = 0; i < boxCount; ++i) 
+	{
+		CreateObjectOfType<Box>();
+	}
+
+	for (int i = 0; i < sphereCount; ++i) 
+	{
+		CreateObjectOfType<Sphere>();
+	}
+
+#endif
+
+	auto finish = std::chrono::steady_clock::now();
+
+	std::cout << "InitScene Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(finish - start) << '\n';
 }
 
 // a ray which is used to tap (by default, remove) a box - see the 'mouse' function for how this is used.
@@ -249,12 +273,11 @@ void UpdatePhysics(const float deltaTime)
 
 	for (ColliderObject* collider : Colliders)
 		size = std::max(size, std::abs(collider->Position.Y));
+	size = std::max({MAX_X * 2, MAX_Z * 2, std::ceilf(size)});
 
 	auto endOfSearch = std::chrono::steady_clock::now();
 
-	//for (ColliderObject* collider : Colliders)
-	   // halfSize = std::max(std::abs(collider->Position.Y), halfSize);
-	//halfSize = std::max({MAX_X * 2, MAX_Z * 2, std::ceilf(halfSize)});
+
 
 	for (ColliderObject* box : Colliders) 
 	{ 
