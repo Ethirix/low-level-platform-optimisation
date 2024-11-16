@@ -7,6 +7,7 @@
     <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Vector3.cpp" />
     <ClCompile Include="Overloads.cpp" />
+    <ClCompile Include="Octree.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Box.h">
@@ -36,12 +37,19 @@
     <ClInclude Include="MemoryTracker.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="MemoryFooter.h" />
-    <ClInclude Include="MemoryHeader.h" />
     <ClInclude Include="MemoryPoolManager.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="MemoryPool.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Octree.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryHeader.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryFooter.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

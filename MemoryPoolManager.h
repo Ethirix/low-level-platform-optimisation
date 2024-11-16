@@ -143,9 +143,10 @@ public:
 			header->Previous->Next = nullptr;
 		}
 
+		if (header->GlobalPrevious)
+			header->GlobalPrevious->GlobalNext = footer->GlobalNext;
 		if (footer->GlobalNext)
 		{
-			header->GlobalPrevious->GlobalNext = footer->GlobalNext;
 			footer->GlobalNext->GlobalPrevious = header->GlobalPrevious;
 		}
 		else

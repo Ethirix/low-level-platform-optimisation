@@ -17,6 +17,7 @@
 #include "MemoryHeader.h"
 #include "MemoryPoolManager.h"
 #include "MemoryTracker.h"
+#include "Octree.h"
 #include "Sphere.h"
 #include "Vector3.h"
 
@@ -27,22 +28,25 @@
 #define NUMBER_OF_BOXES 100
 #define NUMBER_OF_SPHERES 100
 
-#define RESOLUTION_X 1920
-#define RESOLUTION_Y 1080
+constexpr unsigned DEBUG_INT_ALLOC_SIZE = 64;
+
+constexpr unsigned RESOLUTION_X = 1920;
+constexpr unsigned RESOLUTION_Y = 1080;
 
 // This is where the camera is, where it is looking and the bounds of the containing box. You shouldn't need to alter these
+constexpr float LOOK_AT_X = 10;
+constexpr float LOOK_AT_Y = 10;
+constexpr float LOOK_AT_Z = 50;
 
-#define LOOK_AT_X 10
-#define LOOK_AT_Y 10
-#define LOOK_AT_Z 50
-
-#define LOOK_DIR_X 10
-#define LOOK_DIR_Y 0
-#define LOOK_DIR_Z 0
-
-#define DEBUG_INT_ALLOC_SIZE 64
+constexpr float LOOK_DIR_X = 10;
+constexpr float LOOK_DIR_Y = 0;
+constexpr float LOOK_DIR_Z = 0;
 
 std::list<ColliderObject*> Colliders;
+
+constexpr unsigned OCTREE_DEPTH = 4;
+constexpr float OCTREE_WIDTH = 120;
+std::unique_ptr<class Octree> Octree = nullptr;
 
 template <typename T>
 void DeleteColliderOfType() requires std::derived_from<T, ColliderObject> && (!std::is_same_v<T, ColliderObject>)
@@ -245,6 +249,12 @@ float SearchForHighestElement(unsigned threadCount)
 
 #endif
 
+void SplitOctree(float halfSize)
+{
+	Octree = std::make_unique<class Octree>(Vector3(), halfSize, nullptr);
+	Octree->SplitNode(OCTREE_DEPTH);
+}
+
 // update the physics: gravity, collision test, collision resolution
 void UpdatePhysics(const float deltaTime)
 {
@@ -271,13 +281,21 @@ void UpdatePhysics(const float deltaTime)
 	t.join();
 #endif
 
-	for (ColliderObject* collider : Colliders)
-		size = std::max(size, std::abs(collider->Position.Y));
-	size = std::max({MAX_X * 2, MAX_Z * 2, std::ceilf(size)});
+	//for (ColliderObject* collider : Colliders)
+	//	size = std::max(size, std::abs(collider->Position.Y));
+	//size = std::max({MAX_X * 2, MAX_Z * 2, std::ceilf(size)});
 
-	auto endOfSearch = std::chrono::steady_clock::now();
+	//auto endOfSearch = std::chrono::steady_clock::now();
 
+	//if (!Octree || size > Octree->GetHalfSize())
+	//{
+	//	SplitOctree(size);
+	//}
 
+	//Octree* baseNode = new Octree({}, size, nullptr);
+	//baseNode->SplitNode(4);
+
+	//delete baseNode;
 
 	for (ColliderObject* box : Colliders) 
 	{ 
@@ -286,9 +304,9 @@ void UpdatePhysics(const float deltaTime)
 
 	auto endOfUpdate = std::chrono::steady_clock::now();
 
-	std::cout << "Time to Complete Search: " << duration_cast<std::chrono::microseconds>(endOfSearch - start) << '\n';
-	std::cout << "Time to Complete Update: " << duration_cast<std::chrono::microseconds>(endOfUpdate - endOfSearch) << '\n';
-	std::cout << "Total: " << duration_cast<std::chrono::microseconds>(endOfUpdate - start) << '\n';
+	//std::cout << "Time to Complete Search: " << std::chrono::duration_cast<std::chrono::microseconds>(endOfSearch - start) << '\n';
+	//std::cout << "Time to Complete Update: " << std::chrono::duration_cast<std::chrono::milliseconds>(endOfUpdate - endOfSearch) << '\n';
+	std::cout << "Total: " << duration_cast<std::chrono::milliseconds>(endOfUpdate - start) << '\n';
 }
 
 // draw the sides of the containing area
@@ -579,12 +597,16 @@ void Keyboard(unsigned char key, int x, int y)
 // The main function. 
 int main(int argc, char** argv)
 {
+	auto start = std::chrono::steady_clock::now();
 	srand(static_cast<unsigned>(time(nullptr))); // Seed random number generator
 	//Leaving this commented out for now as it *is* still memory allocated - confident this is stdlib allocations.
 	//MemoryTracker::Get().RemoveAllocation(MemoryTracker::Get().GetAllocation()); // Removed random byte allocation before main even runs
 
+#if NUMBER_OF_BOXES + NUMBER_OF_SPHERES > 10000
+#define THREADED_SCENE_INIT
 	//Actively thread the object creation as a large amount of objects can be slow.
 	std::thread initScene(InitScene, NUMBER_OF_BOXES, NUMBER_OF_SPHERES);
+#endif
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
@@ -605,9 +627,19 @@ int main(int argc, char** argv)
 	glutDisplayFunc(Display);
 	glutIdleFunc(Idle);
 
+#ifdef THREADED_SCENE_INIT
 	initScene.join();
+#else
+	InitScene(NUMBER_OF_BOXES, NUMBER_OF_SPHERES);
+#endif
+
+	SplitOctree(OCTREE_WIDTH);
+
+	auto end = std::chrono::steady_clock::now();
+	std::cout << "Initialisation: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start) << '\n';
 
 	// It will stick here until the program ends. 
 	glutMainLoop();
+
 	return 0;
 }
