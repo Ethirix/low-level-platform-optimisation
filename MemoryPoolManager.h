@@ -18,11 +18,9 @@ public:
 
 		if (!_poolInitialised)
 		{
-			_pool = {
-				.Pool = static_cast<char*>(malloc(POOL_SIZE)),
-				.Size = POOL_SIZE,
-				.LastAllocation = nullptr
-			};
+			_pool.Pool = static_cast<char*>(malloc(POOL_SIZE));
+			_pool.Size = POOL_SIZE;
+			_pool.LastAllocation = nullptr;
 
 			_poolInitialised = true;
 		}

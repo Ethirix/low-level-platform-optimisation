@@ -60,6 +60,14 @@ void Octree::SplitNode(unsigned depth)
 #endif
 }
 
+void Octree::AddCollider(ColliderObject* collider)
+{
+	// If centre point is in a bounding box, add it
+	// As cross-boundary collisions are not in the scope of this project,
+	// can simply exit the recursion once the first deepest position is found.
+	// However, if adding cross-boundary collisions, will have to do essentially do an AABB check.
+	// This may be nearly as efficient as point-in-box checks anyway, for more accuracy.
+}
 
 void Octree::SetHalfSize(float halfSize)
 {

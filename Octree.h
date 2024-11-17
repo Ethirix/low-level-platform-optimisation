@@ -20,7 +20,7 @@ public:
 	~Octree();
 
 	void SplitNode(unsigned depth);
-	void AddCollider(ColliderObject* collider) {}
+	void AddCollider(ColliderObject* collider);
 
 	Octree* Parent;
 	Octree* Children[8];

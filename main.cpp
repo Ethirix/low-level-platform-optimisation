@@ -21,7 +21,6 @@
 #include "Sphere.h"
 #include "Vector3.h"
 
-#define THREADED_SEARCH_TEST 0
 #define THREADED_COLLIDER_CREATION 0
 
 // This is the number of falling physical items. 
@@ -187,68 +186,6 @@ Vector3 ScreenToWorld(int x, int y)
 	return {(float)posX, (float)posY, (float)posZ};
 }
 
-#if THREADED_SEARCH_TEST
-
-float SearchForHighestCollider(unsigned startIndex, unsigned endIndex)
-{
-	std::list<ColliderObject*>::iterator startIt = Colliders.begin();
-	std::list<ColliderObject*>::iterator endIt = Colliders.begin();
-	std::advance(startIt, startIndex);
-	if (endIndex != Colliders.size())
-		std::advance(endIt, endIndex - 1);
-	else
-		endIt = Colliders.end();
-
-	float largest = 0;
-	std::for_each(startIt, endIt, [&largest](const ColliderObject* obj)
-	{
-		largest = std::max(std::abs(obj->Position.Y), largest);
-	});
-
-
-	return largest;
-}
-
-// NOTE: THIS WAS AN ATTEMPT TO OPTIMISE THE HIGHEST COLLIDER SEARCH - IT FAILED SPECTACULARLY
-float SearchForHighestElement(unsigned threadCount)
-{
-	float highestElement = 0;
-
-	// Will defer threading if list of colliders is small enough.
-	if (std::pow(threadCount, 2) >= Colliders.size())
-	{
-		highestElement = SearchForHighestCollider(0, Colliders.size()) / 2.0f;
-	}
-	else 
-	{
-		float* results = new float[threadCount];
-		std::thread* threads = new std::thread[threadCount];
-
-		for (unsigned i = 0; i < threadCount; i++)
-		{
-			threads[i] = std::thread([&results, i](unsigned startIndex, unsigned endIndex)
-			{
-				results[i] = SearchForHighestCollider(startIndex, endIndex);
-			}, Colliders.size() / threadCount * i,
-					Colliders.size() / threadCount * (i + 1) + 
-					(i + 1 == threadCount ? Colliders.size() % threadCount : 0));
-		}
-
-		for (unsigned i = 0; i < threadCount; i++)
-			threads[i].join();
-
-		for (unsigned i = 0; i < threadCount; i++)
-			highestElement = std::max(highestElement, results[i]);
-
-		delete[] threads;
-		delete[] results;
-	}
-
-	return highestElement;
-}
-
-#endif
-
 void SplitOctree(float halfSize)
 {
 	Octree = std::make_unique<class Octree>(Vector3(), halfSize, nullptr);
@@ -269,33 +206,6 @@ void UpdatePhysics(const float deltaTime)
 	//octree use the biggest dimension - determine where to stop the either Z or Y from the octree, or just set it to massive.
 
 	auto start = std::chrono::steady_clock::now();
-	float size = 0;
-
-#if THREADED_SEARCH_TEST
-	unsigned threadCount = std::thread::hardware_concurrency();
-	std::thread t{[&size, threadCount]
-	{
-		 size = SearchForHighestElement(threadCount / 8);
-	}};
-
-	t.join();
-#endif
-
-	//for (ColliderObject* collider : Colliders)
-	//	size = std::max(size, std::abs(collider->Position.Y));
-	//size = std::max({MAX_X * 2, MAX_Z * 2, std::ceilf(size)});
-
-	//auto endOfSearch = std::chrono::steady_clock::now();
-
-	//if (!Octree || size > Octree->GetHalfSize())
-	//{
-	//	SplitOctree(size);
-	//}
-
-	//Octree* baseNode = new Octree({}, size, nullptr);
-	//baseNode->SplitNode(4);
-
-	//delete baseNode;
 
 	for (ColliderObject* box : Colliders) 
 	{ 
