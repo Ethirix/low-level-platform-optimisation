@@ -8,9 +8,6 @@
 
 class Octree
 {
-	//https://iq.opengenus.org/octree/
-	//bounding box
-	//array of subsections[octrees still] 8 of them
 public:
 	Octree(Vector3 position, float halfSize, Octree* parent)
 		: Parent(parent), _position(position), _halfSize(halfSize)

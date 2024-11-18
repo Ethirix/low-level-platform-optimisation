@@ -190,22 +190,11 @@ void SplitOctree(float halfSize)
 // update the physics: gravity, collision test, collision resolution
 void UpdatePhysics(const float deltaTime)
 {
-	// TODO: for the assessment - use a thread for each sub-region
-	// for example, assuming we have two regions:
-	// from 'colliders' create two separate lists
-	// empty each list (from previous frame) and work out which collidable object is in which region, 
-	//  and add the pointer to that region's list.
-	// Then, run two threads with the code below (changing 'colliders' to be the region's list)
-
-	//world is 40xYx60
-	//octree use the biggest dimension - determine where to stop the either Z or Y from the octree, or just set it to massive.
-
 	auto start = std::chrono::steady_clock::now();
 
 	for (ColliderObject* box : Colliders) 
 	{
 		Octree->AddCollider(box);
-		//box->Update(&Colliders, deltaTime);
 	}
 
 	Octree->RunPhysics(deltaTime);
@@ -217,9 +206,6 @@ void UpdatePhysics(const float deltaTime)
 	}
 
 	auto endOfUpdate = std::chrono::steady_clock::now();
-
-	//std::cout << "Time to Complete Search: " << std::chrono::duration_cast<std::chrono::microseconds>(endOfSearch - start) << '\n';
-	//std::cout << "Time to Complete Update: " << std::chrono::duration_cast<std::chrono::milliseconds>(endOfUpdate - endOfSearch) << '\n';
 	std::cout << "Total: " << duration_cast<std::chrono::milliseconds>(endOfUpdate - start) << '\n';
 }
 
@@ -541,13 +527,13 @@ int main(int argc, char** argv)
 	glutDisplayFunc(Display);
 	glutIdleFunc(Idle);
 
+	SplitOctree(OCTREE_WIDTH);
+
 #ifdef THREADED_SCENE_INIT
 	initScene.join();
 #else
 	InitScene(NUMBER_OF_BOXES, NUMBER_OF_SPHERES);
 #endif
-
-	SplitOctree(OCTREE_WIDTH);
 
 	auto end = std::chrono::steady_clock::now();
 	std::cout << "Initialisation: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start) << '\n';
