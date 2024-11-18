@@ -62,46 +62,39 @@ void Octree::SplitNode(unsigned depth)
 
 void Octree::AddCollider(ColliderObject* collider)
 {
-	// If centre point is in a bounding box, add it
-	// As cross-boundary collisions are not in the scope of this project,
-	// can simply exit the recursion once the first deepest position is found.
-	// However, if adding cross-boundary collisions, will have to do essentially do an AABB check.
-	// This may be nearly as efficient as point-in-box checks anyway, for more accuracy.
-
-	//std::thread addThread{[collider, this] () -> void {
-		if ((collider->Position.X - collider->Size.X / 2 <= _position.X + _halfSize && collider->Position.X + collider->Size.X / 2
-				>= _position.X - _halfSize) &&
-			(collider->Position.Y - collider->Size.Y / 2 <= _position.Y + _halfSize && collider->Position.Y + collider->Size.Y / 2
-				>= _position.Y - _halfSize) &&
-			(collider->Position.Z - collider->Size.Z / 2 <= _position.Z + _halfSize && collider->Position.Z + collider->Size.Z / 2
-				>= _position.Z - _halfSize))
+	if ((collider->Position.X - collider->Size.X / 2 <= _position.X + _halfSize && collider->Position.X + collider->Size
+			.X / 2
+			>= _position.X - _halfSize) &&
+		(collider->Position.Y - collider->Size.Y / 2 <= _position.Y + _halfSize && collider->Position.Y + collider->Size
+			.Y / 2
+			>= _position.Y - _halfSize) &&
+		(collider->Position.Z - collider->Size.Z / 2 <= _position.Z + _halfSize && collider->Position.Z + collider->Size
+			.Z / 2
+			>= _position.Z - _halfSize))
+	{
+		if (Children[0])
 		{
-			if (Children[0])
-			{
-				Children[0]->AddCollider(collider);
-				Children[1]->AddCollider(collider);
-				Children[2]->AddCollider(collider);
-				Children[3]->AddCollider(collider);
-				Children[4]->AddCollider(collider);
-				Children[5]->AddCollider(collider);
-				Children[6]->AddCollider(collider);
-				Children[7]->AddCollider(collider);
-			}
-			else
-			{
-				Colliders.push_back(collider);
-			}
+			Children[0]->AddCollider(collider);
+			Children[1]->AddCollider(collider);
+			Children[2]->AddCollider(collider);
+			Children[3]->AddCollider(collider);
+			Children[4]->AddCollider(collider);
+			Children[5]->AddCollider(collider);
+			Children[6]->AddCollider(collider);
+			Children[7]->AddCollider(collider);
 		}
-	//}};
-
-	//addThread.join();
+		else
+		{
+			Colliders.push_back(collider);
+		}
+	}
 }
 
 void Octree::RunPhysics(const float deltaTime)
 {
 	std::thread physicsThread = {};
 
-	if (Colliders.size() > 1)
+	if (Colliders.size() > MINIMUM_COLLIDER_COUNT_FOR_THREADING)
 	{
 		 physicsThread = std::thread{ [this, deltaTime] () -> void {
 			for (ColliderObject* collider : Colliders)
