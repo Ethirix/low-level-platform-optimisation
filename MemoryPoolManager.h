@@ -1,8 +1,9 @@
 #pragma once
 #include <assert.h>
 #include <cstdlib>
+#include <mutex>
 
-#include "globals.h"
+#include "Globals.h"
 #include "MemoryFooter.h"
 #include "MemoryHeader.h"
 #include "MemoryPool.h"
@@ -13,13 +14,13 @@ class MemoryPoolManager
 public:
 	[[nodiscard]] static void* Allocate(size_t size)
 	{
+		const std::lock_guard lock(_allocMutex);
+
 		if (!_poolInitialised)
 		{
-			_pool = {
-				static_cast<char*>(malloc(POOL_SIZE)),
-				POOL_SIZE,
-				nullptr
-			};
+			_pool.Pool = static_cast<char*>(malloc(POOL_SIZE));
+			_pool.Size = POOL_SIZE;
+			_pool.LastAllocation = nullptr;
 
 			_poolInitialised = true;
 		}
@@ -37,7 +38,19 @@ public:
 
 		if (!addressToAllocateFrom)
 		{
-			//Attempts to backtrack pool to find space - doing this first as to optimize slack space
+			lastAlloc = _pool.LastAllocation;
+			if (MemoryHeader* header = lastAlloc->Header;
+				lastAlloc && _pool.Size - (header->Offset + header->Size) >= wrappedSize)
+			{
+				//Allocates at top of pool
+				addressToAllocateFrom = _pool.Pool + header->Offset + header->Size;
+			}
+		}
+
+		if (!addressToAllocateFrom)
+		{
+			// Attempts to backtrack pool to find space - doing this second as if large memory allocation - this can take a LONG time.
+			// This may leave a lot of slack space - as the pool is never shuffled.
 			lastAlloc = lastAlloc->Header->Previous;
 			while (lastAlloc)
 			{
@@ -49,17 +62,6 @@ public:
 				}
 
 				lastAlloc = lastAlloc->Header->Previous;
-			}
-		}
-
-		if (!addressToAllocateFrom)
-		{
-			lastAlloc = _pool.LastAllocation;
-			if (MemoryHeader* header = lastAlloc->Header;
-				lastAlloc && _pool.Size - (header->Offset + header->Size) >= wrappedSize)
-			{
-				//Allocates at top of pool
-				addressToAllocateFrom = _pool.Pool + header->Offset + header->Size;
 			}
 		}
 
@@ -115,6 +117,8 @@ public:
 
 	static void Free(void* memoryBlock)
 	{
+		const std::lock_guard lock(_freeMutex);
+
 		MemoryHeader* header = reinterpret_cast<MemoryHeader*>(static_cast<char*>(memoryBlock) - sizeof(MemoryHeader));
 		MemoryFooter* footer = header->Footer;
 
@@ -138,9 +142,10 @@ public:
 			header->Previous->Next = nullptr;
 		}
 
+		if (header->GlobalPrevious)
+			header->GlobalPrevious->GlobalNext = footer->GlobalNext;
 		if (footer->GlobalNext)
 		{
-			header->GlobalPrevious->GlobalNext = footer->GlobalNext;
 			footer->GlobalNext->GlobalPrevious = header->GlobalPrevious;
 		}
 		else
@@ -175,4 +180,7 @@ private:
 	static inline MemoryPool _pool;
 	static inline unsigned _poolCount;
 	static inline bool _poolInitialised = false;
+
+	static inline std::mutex _allocMutex;
+	static inline std::mutex _freeMutex;
 };
