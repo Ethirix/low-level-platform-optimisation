@@ -24,8 +24,8 @@
 #define THREADED_COLLIDER_CREATION 0
 
 // This is the number of falling physical items. 
-#define NUMBER_OF_BOXES 100
-#define NUMBER_OF_SPHERES 100
+#define NUMBER_OF_BOXES 250
+#define NUMBER_OF_SPHERES 250
 
 constexpr unsigned DEBUG_INT_ALLOC_SIZE = 64;
 
@@ -43,8 +43,8 @@ constexpr float LOOK_DIR_Z = 0;
 
 std::list<ColliderObject*> Colliders;
 
-constexpr unsigned OCTREE_DEPTH = 4;
-constexpr float OCTREE_WIDTH = 120;
+constexpr unsigned OCTREE_DEPTH = 2;
+constexpr float OCTREE_WIDTH = 60;
 std::unique_ptr<class Octree> Octree = nullptr;
 
 template <typename T>
@@ -208,8 +208,17 @@ void UpdatePhysics(const float deltaTime)
 	auto start = std::chrono::steady_clock::now();
 
 	for (ColliderObject* box : Colliders) 
-	{ 
-		box->Update(&Colliders, deltaTime);
+	{
+		Octree->AddCollider(box);
+		//box->Update(&Colliders, deltaTime);
+	}
+
+	Octree->RunPhysics(deltaTime);
+	Octree->ClearColliders();
+
+	for (ColliderObject* collider : Colliders)
+	{
+		collider->Updated = false;
 	}
 
 	auto endOfUpdate = std::chrono::steady_clock::now();

@@ -21,6 +21,8 @@ public:
 
 	void SplitNode(unsigned depth);
 	void AddCollider(ColliderObject* collider);
+	void RunPhysics(float deltaTime);
+	void ClearColliders();
 
 	Octree* Parent;
 	Octree* Children[8];

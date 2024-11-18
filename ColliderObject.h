@@ -2,16 +2,22 @@
 
 #include "Vector3.h"
 #include <list>
+#include <mutex>
+
 #include <GL/glut.h>
 #include "Globals.h"
 
 class ColliderObject
 {
+private:
+    std::mutex _updateMutex;
+
 public:
     Vector3 Position;
     Vector3 Size;
     Vector3 Velocity;
     Vector3 Colour;
+    bool Updated;
 
     // if two colliders collide, push them away from each other
     void ResolveCollision(ColliderObject* a, ColliderObject* b) {
@@ -72,8 +78,16 @@ public:
 
     virtual ~ColliderObject() = default;
 
-    void Update(std::list<ColliderObject*>* colliders, const float& deltaTime)
+    void Update(const std::list<ColliderObject*>* colliders, const float& deltaTime)
     {
+		{
+            std::lock_guard lock(_updateMutex);
+
+	        if (Updated)
+	            return;
+    		Updated = true;
+		}
+
         const float floorY = 0.0f;
         // Update velocity due to gravity
         Velocity.Y += GRAVITY * deltaTime;
