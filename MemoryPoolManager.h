@@ -38,7 +38,19 @@ public:
 
 		if (!addressToAllocateFrom)
 		{
-			//Attempts to backtrack pool to find space - doing this first as to optimize slack space
+			lastAlloc = _pool.LastAllocation;
+			if (MemoryHeader* header = lastAlloc->Header;
+				lastAlloc && _pool.Size - (header->Offset + header->Size) >= wrappedSize)
+			{
+				//Allocates at top of pool
+				addressToAllocateFrom = _pool.Pool + header->Offset + header->Size;
+			}
+		}
+
+		if (!addressToAllocateFrom)
+		{
+			// Attempts to backtrack pool to find space - doing this second as if large memory allocation - this can take a LONG time.
+			// This may leave a lot of slack space - as the pool is never shuffled.
 			lastAlloc = lastAlloc->Header->Previous;
 			while (lastAlloc)
 			{
@@ -50,17 +62,6 @@ public:
 				}
 
 				lastAlloc = lastAlloc->Header->Previous;
-			}
-		}
-
-		if (!addressToAllocateFrom)
-		{
-			lastAlloc = _pool.LastAllocation;
-			if (MemoryHeader* header = lastAlloc->Header;
-				lastAlloc && _pool.Size - (header->Offset + header->Size) >= wrappedSize)
-			{
-				//Allocates at top of pool
-				addressToAllocateFrom = _pool.Pool + header->Offset + header->Size;
 			}
 		}
 
