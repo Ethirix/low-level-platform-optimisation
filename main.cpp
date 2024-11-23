@@ -183,7 +183,7 @@ Vector3 ScreenToWorld(int x, int y)
 
 void SplitOctree(float halfSize)
 {
-	Octree = std::make_unique<class Octree>(Vector3(), halfSize, nullptr);
+	Octree = std::make_unique<class Octree>(Vector3(0, halfSize, 0), halfSize, nullptr);
 	Octree->SplitNode(OCTREE_DEPTH);
 }
 

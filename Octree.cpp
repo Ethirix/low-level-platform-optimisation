@@ -16,6 +16,9 @@ Octree::~Octree()
 
 void Octree::SplitNode(unsigned depth)
 {
+	if (depth <= 0)
+		return;
+
 	//Once again, slower than 
 #if THREAD_OCTREE_SPLIT
 	std::thread t{[this](Octree* Children[8], Vector3 _position, float _halfSize, unsigned depth) -> void {
