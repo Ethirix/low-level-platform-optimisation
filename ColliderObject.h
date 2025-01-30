@@ -12,12 +12,30 @@ class ColliderObject
 private:
     std::mutex _updateMutex;
 
+    float _dampening = 0.7f; // Dampening factor (0.9 = 10% energy reduction)
+    const float _floorY = 0.0f;
+
 public:
     Vector3 Position;
     Vector3 Size;
     Vector3 Velocity;
     Vector3 Colour;
     bool Updated;
+
+    void RunCollisions(const std::list<ColliderObject*>* colliders, const float& deltaTime)
+    {
+        // Check for collisions with other colliders
+        for (ColliderObject* other : *colliders)
+        {
+            if (this == other) continue;
+            if (CheckCollision(this, other))
+            {
+                ResolveCollision(this, other);
+                //break; //NOTE: THIS CAUSES INACCURATE COLLISIONS
+                //Disabled to fix intersecting objects when multiple collisions occur in a single frame.
+            }
+        }
+    }
 
     // if two colliders collide, push them away from each other
     void ResolveCollision(ColliderObject* a, ColliderObject* b) {
@@ -41,8 +59,7 @@ public:
 
         // Compute the collision impulse scalar
         float e = 0.01f; // Coefficient of restitution (0 = inelastic, 1 = elastic)
-        float dampening = 0.7f; // Dampening factor (0.9 = 10% energy reduction)
-        float j = -(1.0f + e) * impulse * dampening;
+        float j = -(1.0f + e) * impulse * _dampening;
 
         // Apply the impulse to the colliders' velocities
         a->Velocity.X += j * normal.X;
@@ -80,14 +97,13 @@ public:
 
     void Update(const std::list<ColliderObject*>* colliders, const float& deltaTime)
     {
-		{
+        {
             std::lock_guard lock(_updateMutex);
-	        if (Updated)
-	            return;
+            if (Updated)
+                goto SkipUpdate;
             Updated = true;
-		}
-
-        const float floorY = 0.0f;
+        }
+        
         // Update velocity due to gravity
         Velocity.Y += GRAVITY * deltaTime;
 
@@ -96,32 +112,22 @@ public:
         Position.Y += Velocity.Y * deltaTime;
         Position.Z += Velocity.Z * deltaTime;
 
-        float dampening = 0.7f;
         // Check for collision with the floor
-        if (Position.Y - Size.Y / 2.0f < floorY) 
+        if (Position.Y - Size.Y / 2.0f < _floorY) 
         {
-            Position.Y = floorY + Size.Y / 2.0f;
-            Velocity.Y = -Velocity.Y * dampening;
+            Position.Y = _floorY + Size.Y / 2.0f;
+            Velocity.Y = -Velocity.Y * _dampening;
         }
 
         // Check for collision with the walls
     	if ((Position.X - Size.X / 2.0f < MIN_X && Velocity.X < 0.0f) || (Position.X + Size.X / 2.0f > MAX_X && Velocity.X > 0.0f))
-    		Velocity.X = -Velocity.X * dampening;
+    		Velocity.X = -Velocity.X * _dampening;
 
         if ((Position.Z - Size.Z / 2.0f < MIN_Z && Velocity.Z < 0.0f) || (Position.Z + Size.Z / 2.0f > MAX_Z && Velocity.Z > 0.0f))
-    		Velocity.Z = -Velocity.Z * dampening;
+    		Velocity.Z = -Velocity.Z * _dampening;
 
-        // Check for collisions with other colliders
-    	for (ColliderObject* other : *colliders) 
-    	{
-    		if (this == other) continue;
-    		if (CheckCollision(this, other)) 
-    		{
-    			ResolveCollision(this, other);
-    			//break; //NOTE: THIS CAUSES INACCURATE COLLISIONS
-    			//Disabled to fix intersecting objects when multiple collisions occur in a single frame.
-    		}
-    	}
+SkipUpdate:
+        RunCollisions(colliders, deltaTime);
     }
 };
 
